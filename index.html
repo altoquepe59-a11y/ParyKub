@@ -1178,21 +1178,6 @@
   </style>
 </head>
 <body>
-  <main id="splash" class="splash" aria-label="Iniciando PartyKub">
-    <div class="splash-stage">
-      <img class="splash-art splash-art--new-logo" src="partykub-new-logo.png" alt="">
-      <img class="splash-art splash-art--party-word" src="PartyKub-splash-word-hd.png" alt="PartyKub">
-      <img class="splash-art splash-art--rainbow-ribbon" src="PartyKub-splash-rainbow-ribbon.png" alt="" aria-hidden="true">
-      <img class="splash-art splash-art--star" src="PartyKub-splash-star.png" alt="" aria-hidden="true">
-      <img class="splash-art splash-art--lower-star-left" src="PartyKub-splash-star.png" alt="" aria-hidden="true">
-      <img class="splash-art splash-art--lower-star-center" src="PartyKub-splash-star.png" alt="" aria-hidden="true">
-      <img class="splash-art splash-art--lower-star-right" src="PartyKub-splash-star.png" alt="" aria-hidden="true">
-      <img class="splash-art splash-art--hat" src="PartyKub-splash-hat.png" alt="">
-      <img class="splash-art splash-art--balloon" src="PartyKub-splash-balloon.png" alt="">
-      <img class="splash-art splash-art--left-tiles" src="PartyKub-splash-left-tiles.png" alt="">
-      <img class="splash-art splash-art--tile-four" src="PartyKub-splash-four-tile-crop.png" alt="">
-    </div>
-  </main>
   <main id="setup" class="setup" hidden>
     <section class="setup-card" aria-labelledby="setup-title">
       <div class="setup-hero">
@@ -3081,10 +3066,7 @@
       document.querySelectorAll('[data-layout-choice]').forEach((button) => {
         button.addEventListener('click', () => startGame(button.dataset.layoutChoice));
       });
-      setTimeout(() => {
-        $('#splash').hidden = true;
-        $('#setup').hidden = false;
-      }, 5000);
+      $('#setup').hidden = false;
       renderSavedGames();
       initializeCloudSavedGames();
       document.addEventListener('visibilitychange', () => {
