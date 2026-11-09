@@ -1387,6 +1387,7 @@
     <h1 id="turn-announcement-text" class="turn-announcement__text"></h1>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="PartyKub-3d-table.js"></script>
   <script>
     (() => {
@@ -1442,6 +1443,12 @@
       ];
       const $ = (selector) => document.querySelector(selector);
       const SAVED_GAMES_KEY = 'partykub.saved-games.v1';
+      const SUPABASE_URL = 'https://xfbqiiwbxpqplpcmfdap.supabase.co';
+      const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_A0u-GQuGr8vy5HAiQF_9-Q_vRt40SWY';
+      let cloudSavedGamesClient = null;
+      let cloudSavedGamesUserId = null;
+      let cloudSavedGamesReady = false;
+      let cloudSavedGamesStatus = 'Conectando con Supabase...';
       const state = {
         players: [],
         bag: [],
@@ -1970,6 +1977,93 @@
         return saves;
       }
 
+      function setCloudSavedGamesStatus(message) {
+        cloudSavedGamesStatus = message;
+        const status = $('#saved-games-status');
+        if (status) status.textContent = message;
+      }
+
+      async function initializeCloudSavedGames() {
+        try {
+          if (!window.supabase?.createClient) throw new Error('No se pudo cargar el cliente de Supabase.');
+          cloudSavedGamesClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true }
+          });
+          const { data: sessionData, error: sessionError } = await cloudSavedGamesClient.auth.getSession();
+          if (sessionError) throw sessionError;
+          let user = sessionData.session?.user;
+          if (user && !user.is_anonymous) throw new Error('La sesión de Supabase de este navegador no es anónima.');
+          if (!user) {
+            const { data, error } = await cloudSavedGamesClient.auth.signInAnonymously();
+            if (error) throw error;
+            user = data.user;
+          }
+          if (!user?.id) throw new Error('Supabase no devolvió la sesión anónima del jugador.');
+          cloudSavedGamesUserId = user.id;
+
+          const { data: remoteSaves, error: loadError } = await cloudSavedGamesClient
+            .from('partykub_saved_games')
+            .select('id, name, saved_at, game');
+          if (loadError) throw loadError;
+
+          const mergedSaves = new Map(
+            readSavedGames()
+              .filter((save) => save && typeof save.id === 'string' && save.game && Number.isFinite(save.savedAt))
+              .map((save) => [save.id, save])
+          );
+          const remoteById = new Map();
+          for (const row of remoteSaves || []) {
+            const save = { id: row.id, name: row.name, savedAt: Number(row.saved_at), game: row.game };
+            if (typeof save.id !== 'string' || !Number.isFinite(save.savedAt) || !save.game) continue;
+            remoteById.set(save.id, row);
+            const current = mergedSaves.get(save.id);
+            if (!current || save.savedAt > current.savedAt) mergedSaves.set(save.id, save);
+          }
+
+          const saves = [...mergedSaves.values()];
+          localStorage.setItem(SAVED_GAMES_KEY, JSON.stringify(saves));
+          const localUpdates = saves
+            .filter((save) => {
+              const remote = remoteById.get(save.id);
+              return !remote || save.savedAt > Number(remote.saved_at);
+            })
+            .map((save) => ({
+              id: save.id,
+              user_id: cloudSavedGamesUserId,
+              name: save.name,
+              saved_at: save.savedAt,
+              game: save.game
+            }));
+          if (localUpdates.length) {
+            const { error } = await cloudSavedGamesClient.from('partykub_saved_games').upsert(localUpdates);
+            if (error) throw error;
+          }
+
+          cloudSavedGamesReady = true;
+          setCloudSavedGamesStatus('Partidas sincronizadas con Supabase en este dispositivo.');
+          renderSavedGames();
+        } catch (error) {
+          cloudSavedGamesReady = false;
+          setCloudSavedGamesStatus('No se pudo sincronizar con Supabase; las partidas siguen guardándose solo en este dispositivo.');
+          console.error('PartyKub: no se pudieron sincronizar las partidas con Supabase.', error);
+          renderSavedGames();
+        }
+      }
+
+      async function saveGameToCloud(save) {
+        if (!cloudSavedGamesReady || !cloudSavedGamesClient || !cloudSavedGamesUserId) {
+          throw new Error('La conexión de Supabase todavía no está disponible.');
+        }
+        const { error } = await cloudSavedGamesClient.from('partykub_saved_games').upsert({
+          id: save.id,
+          user_id: cloudSavedGamesUserId,
+          name: save.name,
+          saved_at: save.savedAt,
+          game: save.game
+        });
+        if (error) throw error;
+      }
+
       function renderSavedGames() {
         const list = $('#saved-game-list');
         list.replaceChildren();
@@ -1983,7 +2077,7 @@
           return;
         }
         const validSaves = saves.filter((save) => save && typeof save.id === 'string' && save.game && Number.isFinite(save.savedAt));
-        $('#saved-games-status').textContent = '';
+        $('#saved-games-status').textContent = cloudSavedGamesStatus;
         $('#saved-games-empty').hidden = validSaves.length > 0;
         validSaves.slice().sort((a, b) => b.savedAt - a.savedAt).forEach((save) => {
           const item = document.createElement('li');
@@ -2038,7 +2132,7 @@
         };
       }
 
-      function saveCurrentGame() {
+      async function saveCurrentGame() {
         if (!state.players.length) return;
         const save = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -2051,10 +2145,15 @@
           saves.push(save);
           localStorage.setItem(SAVED_GAMES_KEY, JSON.stringify(saves));
           renderSavedGames();
-          $('#pause-menu-status').textContent = 'Partida guardada. Puedes reanudarla desde el menú principal.';
-          $('#saved-games-status').textContent = '';
+          $('#pause-menu-status').textContent = 'Partida guardada en este dispositivo. Sincronizando con Supabase...';
+          await saveGameToCloud(save);
+          setCloudSavedGamesStatus('Partidas sincronizadas con Supabase en este dispositivo.');
+          $('#pause-menu-status').textContent = 'Partida guardada en este dispositivo y en Supabase.';
         } catch (error) {
-          $('#pause-menu-status').textContent = 'No se pudo guardar la partida. Revisa el espacio disponible del navegador.';
+          $('#pause-menu-status').textContent = cloudSavedGamesReady
+            ? 'La partida quedó guardada en este dispositivo, pero no se pudo sincronizar con Supabase.'
+            : 'La partida quedó guardada en este dispositivo; Supabase aún no está disponible.';
+          setCloudSavedGamesStatus('No se pudo sincronizar una partida; revisa la conexión con Supabase.');
           console.error('PartyKub: no se pudo guardar la partida.', error);
         }
       }
@@ -2065,15 +2164,25 @@
         $('#delete-save-dialog').showModal();
       }
 
-      function deleteSavedGame() {
+      async function deleteSavedGame() {
         if (!savePendingDeletionId) return;
         try {
+          if (cloudSavedGamesReady) {
+            const { error } = await cloudSavedGamesClient
+              .from('partykub_saved_games')
+              .delete()
+              .eq('user_id', cloudSavedGamesUserId)
+              .eq('id', savePendingDeletionId);
+            if (error) throw error;
+          }
           const saves = readSavedGames().filter((save) => save && save.id !== savePendingDeletionId);
           localStorage.setItem(SAVED_GAMES_KEY, JSON.stringify(saves));
-          $('#saved-games-status').textContent = '';
+          setCloudSavedGamesStatus(cloudSavedGamesReady
+            ? 'Partida eliminada del dispositivo y de Supabase.'
+            : 'Partida eliminada de este dispositivo; Supabase no estaba disponible.');
           renderSavedGames();
         } catch (error) {
-          $('#saved-games-status').textContent = 'No se pudo eliminar la partida guardada.';
+          setCloudSavedGamesStatus('No se pudo eliminar la partida guardada de Supabase; no se quitó de este dispositivo.');
           console.error('PartyKub: no se pudo eliminar la partida guardada.', error);
         }
         savePendingDeletionId = null;
@@ -2970,6 +3079,7 @@
         $('#setup').hidden = false;
       }, 5000);
       renderSavedGames();
+      initializeCloudSavedGames();
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) scheduleBots();
       });
