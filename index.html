@@ -1448,7 +1448,7 @@
       let cloudSavedGamesClient = null;
       let cloudSavedGamesUserId = null;
       let cloudSavedGamesReady = false;
-      let cloudSavedGamesStatus = 'Conectando con Supabase...';
+      let cloudSavedGamesStatus = 'Supabase se conectará cuando guardes una partida.';
       const state = {
         players: [],
         bag: [],
@@ -1983,17 +1983,23 @@
         if (status) status.textContent = message;
       }
 
-      async function initializeCloudSavedGames() {
+      async function initializeCloudSavedGames({ allowAnonymousCreation = false } = {}) {
         try {
           if (!window.supabase?.createClient) throw new Error('No se pudo cargar el cliente de Supabase.');
-          cloudSavedGamesClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-            auth: { persistSession: true, autoRefreshToken: true }
-          });
+          if (!cloudSavedGamesClient) {
+            cloudSavedGamesClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+              auth: { persistSession: true, autoRefreshToken: true }
+            });
+          }
           const { data: sessionData, error: sessionError } = await cloudSavedGamesClient.auth.getSession();
           if (sessionError) throw sessionError;
           let user = sessionData.session?.user;
           if (user && !user.is_anonymous) throw new Error('La sesión de Supabase de este navegador no es anónima.');
           if (!user) {
+            if (!allowAnonymousCreation) {
+              setCloudSavedGamesStatus('Las partidas se guardan en este dispositivo; Supabase se conectará al guardar una partida.');
+              return;
+            }
             const { data, error } = await cloudSavedGamesClient.auth.signInAnonymously();
             if (error) throw error;
             user = data.user;
@@ -2146,6 +2152,7 @@
           localStorage.setItem(SAVED_GAMES_KEY, JSON.stringify(saves));
           renderSavedGames();
           $('#pause-menu-status').textContent = 'Partida guardada en este dispositivo. Sincronizando con Supabase...';
+          if (!cloudSavedGamesReady) await initializeCloudSavedGames({ allowAnonymousCreation: true });
           await saveGameToCloud(save);
           setCloudSavedGamesStatus('Partidas sincronizadas con Supabase en este dispositivo.');
           $('#pause-menu-status').textContent = 'Partida guardada en este dispositivo y en Supabase.';

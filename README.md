@@ -12,13 +12,16 @@ navegador moderno; la mesa 3D carga Three.js desde un CDN.
 ## Supabase
 
 Las partidas guardadas se sincronizan con Supabase mediante inicio de sesión
-anónimo. La clave `publishable` incluida en el cliente es pública por diseño;
-nunca incluyas una clave `secret` o `service_role`.
+anónimo, que PartyKub crea solo cuando el jugador guarda su primera partida.
+La clave `publishable` incluida en el cliente es pública por diseño; nunca
+incluyas una clave `secret` o `service_role`.
 
 Antes de usar la sincronización, ejecuta
 [`supabase/partykub_saved_games.sql`](./supabase/partykub_saved_games.sql) en el
 SQL Editor del proyecto. El proveedor de autenticación anónima debe estar
 habilitado.
+Supabase recomienda configurar CAPTCHA para proteger los inicios anónimos de
+abuso y limitar el consumo del proyecto.
 
 RLS restringe cada operación a la sesión anónima propietaria de las partidas.
 Las partidas también se conservan en el almacenamiento local del navegador.
