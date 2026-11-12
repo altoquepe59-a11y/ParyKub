@@ -9,6 +9,10 @@ El sitio estático se publica desde la raíz de este repositorio. Render sirve
 `index.html` y despliega los cambios de `main`. También puedes abrirlo en un
 navegador moderno; la mesa 3D carga Three.js desde un CDN.
 
+La versión optimizada para celular en vertical está disponible en
+[`movil.html`](./movil.html) y en
+[parykub.onrender.com/movil.html](https://parykub.onrender.com/movil.html).
+
 ## Supabase
 
 Las partidas guardadas se sincronizan con Supabase mediante inicio de sesión
