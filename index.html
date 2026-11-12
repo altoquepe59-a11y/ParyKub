@@ -5,6 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#102747">
   <title>PartyKub · Rummikub local</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="prefetch" href="partykub-solo-intro.html?v=1">
+  <link rel="prefetch" href="Baloo2-ExtraBold.ttf">
+  <link rel="preload" href="PartyKub-3d-table.js" as="script">
+  <link rel="prefetch" href="PartyKub-fondo-mesa.png">
+  <link rel="prefetch" href="PartyKub-splash-background.png">
+  <link rel="prefetch" href="PartyKub-splash-balloon.png">
+  <link rel="prefetch" href="PartyKub-splash-four-tile-crop.png">
+  <link rel="prefetch" href="PartyKub-splash-hat.png">
+  <link rel="prefetch" href="PartyKub-splash-left-tiles.png">
+  <link rel="prefetch" href="PartyKub-splash-rainbow-ribbon.png">
+  <link rel="prefetch" href="PartyKub-splash-star.png">
+  <link rel="prefetch" href="PartyKub-splash-word-hd.png">
+  <link rel="prefetch" href="partykub-new-logo.png">
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script" crossorigin>
+  <style>
+    .home-intro {
+      position: fixed;
+      z-index: 10000;
+      inset: 0;
+      background: #041a3a;
+    }
+
+    .home-intro iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  </style>
   <style>
     @font-face {
       font-family: "Baloo 2";
@@ -1178,6 +1208,39 @@
   </style>
 </head>
 <body>
+  <div id="home-intro" class="home-intro" role="dialog" aria-modal="true" aria-label="Inicio de PartyKub">
+    <iframe id="home-intro-frame" src="partykub-solo-intro.html?v=1" title="Introducción de PartyKub"></iframe>
+  </div>
+  <script>
+    (() => {
+      const homeIntro = document.getElementById('home-intro');
+      const homeIntroFrame = document.getElementById('home-intro-frame');
+      let homeIntroTimer;
+
+      function showSetup() {
+        const setup = document.getElementById('setup');
+        if (!setup) {
+          homeIntroTimer = window.setTimeout(showSetup, 250);
+          return;
+        }
+        if (homeIntro.hidden) return;
+        window.clearTimeout(homeIntroTimer);
+        homeIntro.hidden = true;
+        homeIntroFrame.src = 'about:blank';
+        setup.hidden = false;
+      }
+
+      homeIntroTimer = window.setTimeout(showSetup, 6500);
+      window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin
+          || event.source !== homeIntroFrame.contentWindow
+          || event.data?.type !== 'partykub-solo-intro-started') return;
+        window.clearTimeout(homeIntroTimer);
+        homeIntroTimer = window.setTimeout(showSetup, 5000);
+      });
+      homeIntroFrame.addEventListener('error', showSetup);
+    })();
+  </script>
   <main id="setup" class="setup" hidden>
     <section class="setup-card" aria-labelledby="setup-title">
       <div class="setup-hero">
@@ -1372,7 +1435,7 @@
     <h1 id="turn-announcement-text" class="turn-announcement__text"></h1>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <script src="PartyKub-3d-table.js"></script>
   <script>
     (() => {
@@ -2298,7 +2361,6 @@
         if ($('#pause-menu').open) $('#pause-menu').close();
         disposeBoard3D();
         $('#game').hidden = true;
-        $('#setup').hidden = false;
         renderSavedGames();
         if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       }
