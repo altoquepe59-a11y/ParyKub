@@ -6,7 +6,8 @@
   <meta name="theme-color" content="#102747">
   <title>ParyKub (Vertical)</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="prefetch" href="partykub-solo-intro.html?v=1">
+  <link rel="prefetch" href="partykub-solo-intro-vertical.html?v=1">
+  <link rel="preload" href="PartyKub-vertical-play-button.png" as="image">
   <link rel="prefetch" href="Baloo2-ExtraBold.ttf">
   <link rel="preload" href="PartyKub-3d-table.js" as="script">
   <link rel="prefetch" href="PartyKub-fondo-mesa.png">
@@ -1241,8 +1242,8 @@
   </style>
 </head>
 <body class="mobile-copy">
-  <div id="home-intro" class="home-intro" role="dialog" aria-modal="true" aria-label="Inicio de PartyKub">
-    <iframe id="home-intro-frame" src="partykub-solo-intro.html?v=1" title="Introducción de PartyKub"></iframe>
+  <div id="home-intro" class="home-intro" role="dialog" aria-modal="true" aria-label="Inicio de ParyKub Vertical">
+    <iframe id="home-intro-frame" src="partykub-solo-intro-vertical.html?v=1" title="Introducción vertical de ParyKub"></iframe>
   </div>
   <script>
     (() => {
@@ -1265,11 +1266,16 @@
 
       homeIntroTimer = window.setTimeout(showSetup, 6500);
       window.addEventListener('message', (event) => {
-        if (event.origin !== window.location.origin
-          || event.source !== homeIntroFrame.contentWindow
-          || event.data?.type !== 'partykub-solo-intro-started') return;
+        const isLocalFileMessage = window.location.protocol === 'file:' && event.origin === 'null';
+        if ((event.origin !== window.location.origin && !isLocalFileMessage)
+          || event.source !== homeIntroFrame.contentWindow) return;
+        if (event.data?.type === 'partykub-solo-intro-play') {
+          showSetup();
+          return;
+        }
+        if (event.data?.type !== 'partykub-solo-intro-started') return;
         window.clearTimeout(homeIntroTimer);
-        homeIntroTimer = window.setTimeout(showSetup, 5000);
+        homeIntroTimer = null;
       });
       homeIntroFrame.addEventListener('error', showSetup);
     })();
