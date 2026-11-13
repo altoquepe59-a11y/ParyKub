@@ -61,6 +61,21 @@
            animation:reveal 1s cubic-bezier(.4,.1,.3,1) var(--d) both,
                      rbWave 1.5s ease-in-out calc(var(--d) + 1s) infinite}
 
+  @media (orientation:portrait){
+    /* Reacomoda la composición de arriba sin alterar el botón inferior. */
+    .hat{left:16.8%!important;top:3.74%!important;width:23.7%!important}
+    .note{left:42.6%!important;top:1.62%!important;width:14%!important}
+    .balloon{left:83.4%!important;top:10.88%!important;width:14.9%!important}
+    .rainbow{left:21%!important;top:40.5%!important;width:47%!important}
+    .tile[style*="--d:0.15s"]{left:2.4%!important;top:34.25%!important;width:12.7%!important}
+    .tile[style*="--d:0.35s"]{left:6.2%!important;top:49.81%!important;width:11.5%!important}
+    .tile[style*="--d:0.6s"]{left:78.7%!important;top:54.5%!important;width:12.7%!important}
+    .star[style*="--d:1.05s"]{left:54%!important;top:16.75%!important;width:10.4%!important}
+    .star[style*="--d:1.55s"]{left:68%!important;top:46.5%!important;width:7%!important}
+    .star[style*="--d:1.35s"]{left:30.5%!important;top:48%!important;width:7.5%!important}
+    .star[style*="--d:1.8s"]{left:26.8%!important;top:47%!important;width:5.6%!important}
+  }
+
   /* Barra de 5 s + botón */
   .bar{position:absolute;left:0;bottom:0;height:.7cqw;width:100%;background:rgba(255,255,255,.12)}
   .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffc21a,#ff8a1f,#ff4d6d,#2aa8f2);animation:bar 5s linear forwards}
@@ -137,11 +152,17 @@
     const { width, height } = stage.getBoundingClientRect();
     cvs.width = Math.round(width * pixelRatio);
     cvs.height = Math.round(height * pixelRatio);
-    const scale = height > width
-      ? Math.min(width / 1000, height / 817)
+    const portrait = height > width;
+    const artworkHeight = height * 0.85;
+    const scale = portrait
+      ? Math.min(width / 1211, artworkHeight / 735)
       : Math.min(width / 1452, height / 817);
-    const offsetX = (width - 1452 * scale) / 2;
-    const offsetY = (height - 817 * scale) / 2;
+    const offsetX = portrait
+      ? width * 0.227 - TX * scale
+      : (width - 1452 * scale) / 2;
+    const offsetY = portrait
+      ? artworkHeight * 0.35 - TY * scale
+      : (height - 817 * scale) / 2;
     ctx.setTransform(scale * pixelRatio, 0, 0, scale * pixelRatio, offsetX * pixelRatio, offsetY * pixelRatio);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
