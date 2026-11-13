@@ -188,10 +188,7 @@
   let t0 = 0, raf = 0, ctaTimer = 0;
 
   function draw(t){
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
-    ctx.restore();
+    ctx.clearRect(0, 0, 1452, 817);
     ctx.imageSmoothingQuality = 'high';
     const env = smooth((t - 1.8) / 0.6);              // la ola entra suave tras la caída
 
