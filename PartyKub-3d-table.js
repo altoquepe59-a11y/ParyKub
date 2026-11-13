@@ -471,9 +471,15 @@
       const woodTrim = new THREE.MeshStandardMaterial({ color: 0xb07c54, roughness: 0.74 });
       const windowPaper = new THREE.MeshStandardMaterial({ color: 0xfff0d7, roughness: 0.98, side: THREE.DoubleSide });
       const roomFloorY = -4.6;
-      const roomHalfExtent = 45;
+      const roomHalfExtent = 80;
       const roomEdge = roomHalfExtent - 0.2;
       const roomSize = roomHalfExtent * 2;
+      const roomBeamPositions = [];
+      for (let position = -Math.floor(roomEdge / 10) * 10; position <= roomEdge; position += 10) {
+        roomBeamPositions.push(position);
+      }
+      roomBeamPositions.unshift(-roomEdge);
+      roomBeamPositions.push(roomEdge);
       const wallTopY = 16;
       const wallHeight = wallTopY - roomFloorY;
       const addRoomPart = (geometry, material, x, y, z) => {
@@ -512,7 +518,7 @@
         0
       );
 
-      for (const x of [-roomEdge, -40, -30, -20, -10, 0, 10, 20, 30, 40, roomEdge]) {
+      for (const x of roomBeamPositions) {
         addBackBeam(x, roomFloorY + wallHeight / 2, 0.28, wallHeight, 0.5);
       }
       for (const y of [roomFloorY + 0.18, 0.1, 7.6, wallTopY - 0.18]) {
@@ -526,7 +532,7 @@
         roomFloorY + wallHeight / 2,
         roomHalfExtent
       );
-      for (const x of [-roomEdge, -40, -30, -20, -10, 0, 10, 20, 30, 40, roomEdge]) {
+      for (const x of roomBeamPositions) {
         addFrontBeam(x, roomFloorY + wallHeight / 2, 0.28, wallHeight, 0.5);
       }
       for (const y of [roomFloorY + 0.18, 0.1, 7.6, wallTopY - 0.18]) {
@@ -534,7 +540,7 @@
       }
 
       for (const side of [-1, 1]) {
-        for (const z of [-roomEdge, -40, -30, -20, -10, 0, 10, 20, 30, 40, roomEdge]) {
+        for (const z of roomBeamPositions) {
           addSideBeam(side, z, roomFloorY + wallHeight / 2, 0.28, wallHeight, 0.5);
         }
         for (const y of [roomFloorY + 0.18, 0.1, 7.6, wallTopY - 0.18]) {
