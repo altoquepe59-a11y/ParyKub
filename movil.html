@@ -1010,6 +1010,9 @@
     body.mobile-copy .board-panel.has-3d { grid-template-rows: minmax(0, 1fr); }
     body.mobile-copy .board-panel.has-3d .board-viewport { height: 100%; min-height: 0; }
     body.mobile-copy .board-panel.has-3d .board-3d { height: 100%; }
+    body.mobile-copy #game[data-layout="vertical"] .bot-dialog:not(.bot-dialog--response) {
+      top: calc(max(16px, env(safe-area-inset-top)) + 48px);
+    }
     @media (orientation: landscape) {
       body.mobile-copy #game[data-layout="horizontal"] {
         display: flex;
