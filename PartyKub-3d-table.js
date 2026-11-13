@@ -846,7 +846,7 @@
 
       function maxZoomRadius() {
         const fitScale = currentView === 'player' ? 1.08 : viewScale;
-        return Math.max(34, fitRadius() * fitScale * 1.5);
+        return Math.max(34, fitRadius() * fitScale * 1.15);
       }
 
       function clampZoomRadius(value) {
