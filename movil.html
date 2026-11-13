@@ -247,6 +247,9 @@
     .saved-games-empty { margin: 0; color: #718198; font-size: 12px; }
     .saved-games-status { min-height: 1.4em; margin: 7px 0 0; color: #8a4b00; font-size: 12px; }
     .game-pause-button { position: fixed; z-index: 20; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); width: 46px; min-height: 46px; border: 1px solid #ffffff88; border-radius: 50%; background: #102747e8; box-shadow: 0 4px 16px #07182b55; color: #fff; font-family: "Segoe UI", Arial, sans-serif; font-size: 20px; font-weight: 900; letter-spacing: 2px; cursor: pointer; }
+    .orientation-notice { position: fixed; z-index: 40; top: max(64px, calc(env(safe-area-inset-top) + 56px)); left: 50%; display: flex; width: min(460px, calc(100vw - 24px)); align-items: center; gap: 10px; justify-content: space-between; transform: translateX(-50%); padding: 10px 12px; border: 1px solid #f1cf80; border-radius: 12px; background: #fff4d6; box-shadow: 0 5px 18px #07182b44; color: #49320b; font-size: 13px; font-weight: 700; text-align: left; }
+    .orientation-notice[hidden] { display: none; }
+    .orientation-notice button { flex: 0 0 auto; border: 0; background: transparent; color: inherit; font-size: 20px; font-weight: 800; cursor: pointer; }
     .pause-menu, .delete-save-dialog { width: min(420px, calc(100vw - 32px)); max-width: none; padding: 22px; border: 1px solid #cbd8e8; border-radius: 24px; background: #f8fbff; color: var(--navy); box-shadow: 0 24px 80px #06172f66; }
     .pause-menu::backdrop, .delete-save-dialog::backdrop { background: #07182bcc; backdrop-filter: blur(7px); }
     .pause-menu h2 { margin: 0 0 16px; text-align: center; }
@@ -1230,7 +1233,6 @@
       padding-right: 0;
     }
     body.mobile-copy .orientation-options { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-    body.mobile-copy [data-layout-choice="horizontal"] { display: none !important; }
     body.mobile-copy .orientation-card { min-height: 84px; border-radius: 14px; }
     body.mobile-copy .setup-mode-button,
     body.mobile-copy .room-join input,
@@ -1239,6 +1241,76 @@
     body.mobile-copy .board-panel.has-3d { grid-template-rows: minmax(0, 1fr); }
     body.mobile-copy .board-panel.has-3d .board-viewport { height: 100%; min-height: 0; }
     body.mobile-copy .board-panel.has-3d .board-3d { height: 100%; }
+    @media (orientation: landscape) {
+      body.mobile-copy #game[data-layout="horizontal"] {
+        display: flex;
+        width: 100%;
+        height: 100dvh;
+        min-height: 0;
+        flex-direction: column;
+        overflow: hidden;
+        padding: max(4px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+      }
+      body.mobile-copy #game[data-layout="horizontal"] .game-header {
+        display: flex !important;
+        min-height: 36px;
+        flex: 0 0 auto;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      body.mobile-copy #game[data-layout="horizontal"] > .players {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        flex: 0 0 auto;
+        gap: 5px;
+        margin: 0 0 5px;
+      }
+      body.mobile-copy #game[data-layout="horizontal"] .player-chip { padding: 4px 6px; border-radius: 9px; }
+      body.mobile-copy #game[data-layout="horizontal"] .player-chip span { font-size: clamp(10px, 1.8vw, 12px); }
+      body.mobile-copy #game[data-layout="horizontal"] .player-chip strong,
+      body.mobile-copy #game[data-layout="horizontal"] .player-chip small { margin-top: 2px; font-size: clamp(8px, 1.4vw, 10px); }
+      body.mobile-copy #game[data-layout="horizontal"] .game-grid {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, .8fr);
+        grid-template-rows: minmax(0, 1fr);
+        flex: 1 1 auto;
+        height: auto;
+        min-height: 0;
+        align-items: stretch;
+        gap: 6px;
+        overflow: hidden;
+      }
+      body.mobile-copy #game[data-layout="horizontal"] .table-column {
+        min-width: 0;
+        min-height: 0;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 6px;
+      }
+      body.mobile-copy #game[data-layout="horizontal"] .side-column {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        min-width: 0;
+        min-height: 0;
+        gap: 6px;
+        overflow: hidden;
+      }
+      body.mobile-copy #game[data-layout="horizontal"] .rules-panel { display: none; }
+      body.mobile-copy #game[data-layout="horizontal"] #turn-panel {
+        min-width: 0;
+        min-height: 0;
+        overflow: auto;
+        padding: 8px;
+      }
+      body.mobile-copy #game[data-layout="horizontal"] .question-card-inner { height: clamp(120px, 34dvh, 170px); }
+      body.mobile-copy #game[data-layout="horizontal"] .question-card-front { padding: 8px 10px 6px; }
+      body.mobile-copy #game[data-layout="horizontal"] .question { font-size: clamp(14px, 2.2vw, 18px); line-height: 1.1; }
+      body.mobile-copy #game[data-layout="horizontal"] .turn-status { margin: 4px 0 0; font-size: 10px; line-height: 1.2; }
+      body.mobile-copy #game[data-layout="horizontal"] .question-card-hint { margin-top: 4px; font-size: 9px; }
+      body.mobile-copy #game[data-layout="horizontal"] .board-panel { min-width: 0; min-height: 0; overflow: hidden; }
+      body.mobile-copy #game[data-layout="horizontal"] .board-panel.has-3d { grid-template-rows: minmax(0, 1fr); }
+      body.mobile-copy #game[data-layout="horizontal"] .board-panel.has-3d .board-viewport,
+      body.mobile-copy #game[data-layout="horizontal"] .board-panel.has-3d .board-3d { height: 100%; min-height: 0; }
+    }
   </style>
 </head>
 <body class="mobile-copy">
@@ -1317,7 +1389,7 @@
         <p class="online-room-note" id="online-room-note" role="status" aria-live="polite"></p>
       </div>
       <section class="bot-layout-options" id="bot-layout-options" aria-labelledby="bot-layout-title">
-        <h2 id="bot-layout-title" tabindex="-1">Juega con el celular en vertical</h2>
+        <h2 id="bot-layout-title" tabindex="-1">Elige la orientación de tu partida</h2>
         <div class="orientation-options" aria-label="Orientación del juego">
           <button class="orientation-card" type="button" data-layout-choice="vertical">
             <span class="orientation-icon orientation-icon--portrait" aria-hidden="true">▯</span>
@@ -1327,7 +1399,7 @@
           <button class="orientation-card" type="button" data-layout-choice="horizontal">
             <span class="orientation-icon" aria-hidden="true">▭</span>
             <strong>Jugar horizontal</strong>
-            <small>Más espacio para ver la mesa y tus fichas</small>
+            <small>Gira tu celular horizontalmente para jugar</small>
           </button>
         </div>
         <section class="saved-games" aria-labelledby="saved-games-title">
@@ -1343,6 +1415,10 @@
 
   <main id="game" class="game" data-layout="vertical" hidden>
     <button id="game-pause-button" class="game-pause-button" type="button" aria-label="Pausar partida" title="Pausar partida">II</button>
+    <div id="orientation-notice" class="orientation-notice" role="status" aria-live="polite" hidden>
+      <span id="orientation-notice-text"></span>
+      <button id="orientation-notice-dismiss" type="button" aria-label="Cerrar aviso de orientación">×</button>
+    </div>
     <div id="bot-dialog" class="bot-dialog" role="status" aria-live="polite" hidden>
       <div id="bot-dialog-question" class="bot-dialog__card-slot" hidden></div>
       <span id="bot-dialog-text" class="bot-dialog__text"></span>
@@ -1949,13 +2025,37 @@
         }, Math.max(0, turnAnnouncementUntil - Date.now()));
       }
 
+      function showOrientationNotice() {
+        $('#orientation-notice-text').textContent = 'Gira el celular horizontalmente para jugar en horizontal.';
+        $('#orientation-notice').hidden = false;
+      }
+
+      function hideOrientationNotice() {
+        $('#orientation-notice').hidden = true;
+      }
+
       async function enterFullscreen(layout) {
         const root = document.documentElement;
         try {
           if (!document.fullscreenElement && root.requestFullscreen) await root.requestFullscreen();
         } catch { /* Fullscreen is optional for local files and some mobile browsers. */ }
-        if (layout === 'horizontal' && screen.orientation?.lock) {
-          try { await screen.orientation.lock('landscape'); } catch { /* Keep the chosen layout when orientation lock is unavailable. */ }
+        if (layout !== 'horizontal') {
+          hideOrientationNotice();
+          return;
+        }
+        if (window.matchMedia('(orientation: landscape)').matches) {
+          hideOrientationNotice();
+          return;
+        }
+        if (!screen.orientation?.lock) {
+          showOrientationNotice();
+          return;
+        }
+        try {
+          await screen.orientation.lock('landscape');
+          hideOrientationNotice();
+        } catch {
+          showOrientationNotice();
         }
       }
 
@@ -2321,9 +2421,7 @@
         state.placedTileIds = new Set(game.placedTileIds || []);
         state.pendingGroups = game.pendingGroups || [];
         state.lastStagedGroupSignature = game.lastStagedGroupSignature || '';
-        state.layout = document.body.classList.contains('mobile-copy')
-          ? 'vertical'
-          : (game.layout === 'horizontal' ? 'horizontal' : 'vertical');
+        state.layout = game.layout === 'horizontal' ? 'horizontal' : 'vertical';
         state.turnSequence = game.turnSequence;
         state.ended = Boolean(game.ended);
         state.busy = false;
@@ -2348,7 +2446,8 @@
         render();
         if (state.phase === 'bot-response' && state.targetSeat !== null) showBotResponse(state.targetSeat);
         if (state.currentSeat !== 0 && !state.ended) scheduleBots();
-        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        if (state.layout === 'horizontal') enterFullscreen(state.layout);
+        else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       }
 
       function pauseGame() {
@@ -2416,7 +2515,7 @@
         if (answerTiltStatus === 'pending') enableAnswerTilt();
         const input = $('#player-name');
         const name = input.value.trim().replace(/\s+/g, ' ').slice(0, 24) || 'Jugador';
-        state.layout = document.body.classList.contains('mobile-copy') ? 'vertical' : layout;
+        state.layout = layout === 'horizontal' ? 'horizontal' : 'vertical';
         state.players = [
           createPlayer(name, false),
           createPlayer('Mauro', true),
@@ -2455,11 +2554,11 @@
         nextQuestion();
         $('#setup').hidden = true;
         $('#game').hidden = false;
-        $('#game').dataset.layout = layout;
+        $('#game').dataset.layout = state.layout;
         ensureBoard3D();
         $('#game').classList.add('is-dealing');
         setTimeout(() => $('#game').classList.remove('is-dealing'), 900);
-        enterFullscreen(layout);
+        enterFullscreen(state.layout);
         render();
         scheduleBots();
       }
@@ -3168,6 +3267,12 @@
       });
       document.querySelectorAll('[data-layout-choice]').forEach((button) => {
         button.addEventListener('click', () => startGame(button.dataset.layoutChoice));
+      });
+      $('#orientation-notice-dismiss').addEventListener('click', hideOrientationNotice);
+      window.addEventListener('orientationchange', () => {
+        if (state.layout === 'horizontal' && window.matchMedia('(orientation: landscape)').matches) {
+          hideOrientationNotice();
+        }
       });
       $('#setup').hidden = false;
       renderSavedGames();
