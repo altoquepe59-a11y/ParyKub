@@ -1027,6 +1027,16 @@
         gap: 8px;
         margin-bottom: 4px;
       }
+      body.mobile-copy #game[data-layout="horizontal"] #back-button {
+        display: none !important;
+      }
+      body.mobile-copy #game[data-layout="horizontal"] #game-pause-button {
+        top: max(5px, env(safe-area-inset-top));
+        right: max(8px, env(safe-area-inset-right));
+        width: 42px;
+        min-height: 42px;
+        padding: 0;
+      }
       body.mobile-copy #game[data-layout="horizontal"] > .players {
         display: grid !important;
         grid-template-columns: repeat(4, minmax(0, 1fr));

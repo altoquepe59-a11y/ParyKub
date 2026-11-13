@@ -706,6 +706,10 @@
       let userZoomed = false;
       let dragging = null;
       let handDragging = null;
+      const touchPointers = new Map();
+      let touchGestureActive = false;
+      let pinchStartDistance = 0;
+      let pinchStartRadius = radius;
       let disposed = false;
       let currentView = 'player';
       const clickableTiles = [];
@@ -838,6 +842,15 @@
         const horizontal = 27 / (2 * Math.tan(halfFov) * Math.max(camera.aspect, 0.65));
         const vertical = 21 / (2 * Math.tan(halfFov));
         return Math.max(horizontal, vertical, 22);
+      }
+
+      function maxZoomRadius() {
+        const fitScale = currentView === 'player' ? 1.08 : viewScale;
+        return Math.max(34, fitRadius() * fitScale * 1.5);
+      }
+
+      function clampZoomRadius(value) {
+        return Math.max(17, Math.min(maxZoomRadius(), value));
       }
 
       function resize() {
@@ -2538,9 +2551,33 @@
         if (cancelActiveBotFlight) cancelActiveBotFlight();
       }
 
+      function getTouchDistance() {
+        const [first, second] = [...touchPointers.values()];
+        return first && second ? Math.hypot(second.x - first.x, second.y - first.y) : 0;
+      }
+
       function pointerDown(event) {
-        dragging = { x: event.clientX, y: event.clientY, moved: false };
+        if (event.pointerType === 'touch') {
+          touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        }
         renderer.domElement.setPointerCapture(event.pointerId);
+        if (event.pointerType === 'touch' && touchPointers.size >= 2) {
+          if (!touchGestureActive) {
+            if (handDragging) restoreHandTile(handDragging);
+            touchGestureActive = true;
+            pinchStartDistance = getTouchDistance();
+            pinchStartRadius = radius;
+            dragging = null;
+            handDragging = null;
+            heldHandTile = null;
+            cursorHand.visible = false;
+            element.classList.remove('is-hand-cursor-enabled', 'is-grabbing-tile');
+          }
+          event.preventDefault();
+          return;
+        }
+        if (touchGestureActive) return;
+        dragging = { x: event.clientX, y: event.clientY, moved: false };
         const rect = renderer.domElement.getBoundingClientRect();
         pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -2567,6 +2604,19 @@
       }
 
       function pointerMove(event) {
+        if (event.pointerType === 'touch' && touchPointers.has(event.pointerId)) {
+          touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (touchGestureActive) {
+            const distance = getTouchDistance();
+            if (distance > 0 && pinchStartDistance > 0) {
+              radius = clampZoomRadius(pinchStartRadius * pinchStartDistance / distance);
+              userZoomed = true;
+              updateCamera();
+            }
+            event.preventDefault();
+            return;
+          }
+        }
         if (!dragging) {
           if (!pointerCanHandleTiles) return;
           const rect = renderer.domElement.getBoundingClientRect();
@@ -2607,6 +2657,15 @@
       }
 
       function pointerUp(event) {
+        if (event.pointerType === 'touch') touchPointers.delete(event.pointerId);
+        if (touchGestureActive) {
+          if (touchPointers.size === 0) touchGestureActive = false;
+          dragging = null;
+          handDragging = null;
+          heldHandTile = null;
+          event.preventDefault();
+          return;
+        }
         if (!dragging) return;
         const handDrag = handDragging;
         element.classList.remove('is-grabbing-tile');
@@ -2778,7 +2837,11 @@
         });
       }
 
-      function cancelPointer() {
+      function cancelPointer(event) {
+        if (event?.pointerType === 'touch') {
+          touchPointers.delete(event.pointerId);
+          if (touchPointers.size === 0) touchGestureActive = false;
+        }
         if (handDragging) restoreHandTile(handDragging);
         dragging = null;
         handDragging = null;
@@ -2788,7 +2851,7 @@
 
       function wheel(event) {
         event.preventDefault();
-        radius = Math.max(17, Math.min(34, radius + event.deltaY * 0.018));
+        radius = clampZoomRadius(radius + event.deltaY * 0.018);
         userZoomed = true;
         updateCamera();
       }
