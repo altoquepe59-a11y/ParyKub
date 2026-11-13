@@ -62,18 +62,19 @@
                      rbWave 1.5s ease-in-out calc(var(--d) + 1s) infinite}
 
   @media (orientation:portrait){
-    /* Reubica el arte y los confetis para el formato vertical, sin mover el botón. */
-    .hat{left:12.4%!important;top:33.4%!important;width:26.8%!important}
-    .note{left:42.6%!important;top:33%!important;width:14%!important}
-    .balloon{left:84%!important;top:36.2%!important;width:15.7%!important}
-    .rainbow{left:19.2%!important;top:58.4%!important;width:49%!important}
-    .tile[style*="--d:0.15s"]{left:1.2%!important;top:46.5%!important;width:14%!important}
-    .tile[style*="--d:0.35s"]{left:4.7%!important;top:53.7%!important;width:11.5%!important}
-    .tile[style*="--d:0.6s"]{left:80.8%!important;top:61%!important;width:14%!important}
-    .star[style*="--d:1.05s"]{left:54.5%!important;top:39.5%!important;width:10.4%!important}
-    .star[style*="--d:1.55s"]{left:69%!important;top:60%!important;width:8.5%!important}
-    .star[style*="--d:1.35s"]{left:29.3%!important;top:60.5%!important;width:7.7%!important}
-    .star[style*="--d:1.8s"]{left:25%!important;top:59.8%!important;width:5.6%!important}
+    /* Alinea el arte como una sola composición y conserva el botón inferior. */
+    #stage{--scene-top:32%}
+    .hat{left:14.5%!important;top:calc(var(--scene-top) + 2cqw)!important;width:26.8%!important}
+    .note{left:44%!important;top:calc(var(--scene-top) + 1.4cqw)!important;width:13.2%!important}
+    .balloon{left:85.4%!important;top:calc(var(--scene-top) + 9cqw)!important;width:14.3%!important}
+    .rainbow{left:20.3%!important;top:calc(var(--scene-top) + 59.5cqw)!important;width:49%!important}
+    .tile[style*="--d:0.15s"]{left:1.4%!important;top:calc(var(--scene-top) + 34.3cqw)!important;width:13.4%!important}
+    .tile[style*="--d:0.35s"]{left:5.7%!important;top:calc(var(--scene-top) + 49.7cqw)!important;width:11.5%!important}
+    .tile[style*="--d:0.6s"]{left:82%!important;top:calc(var(--scene-top) + 65.4cqw)!important;width:12.6%!important}
+    .star[style*="--d:1.05s"]{left:55.4%!important;top:calc(var(--scene-top) + 17.1cqw)!important;width:10.4%!important}
+    .star[style*="--d:1.55s"]{left:70.3%!important;top:calc(var(--scene-top) + 64.5cqw)!important;width:6.8%!important}
+    .star[style*="--d:1.35s"]{left:29.4%!important;top:calc(var(--scene-top) + 64.5cqw)!important;width:7.7%!important}
+    .star[style*="--d:1.8s"]{left:26%!important;top:calc(var(--scene-top) + 63.5cqw)!important;width:4.4%!important}
     .conf[style*="--d:1.15s"]{left:3%!important;top:12%!important}
     .conf[style*="--d:1.24s"]{left:28%!important;top:4%!important}
     .conf[style*="--d:1.33s"]{left:61%!important;top:6%!important}
@@ -164,15 +165,16 @@
     cvs.width = Math.round(width * pixelRatio);
     cvs.height = Math.round(height * pixelRatio);
     const portrait = height > width;
-    const artworkHeight = height * 0.85;
+    const artworkTop = height * 0.32;
+    const artworkHeight = width * 0.8;
     const scale = portrait
       ? Math.min(width / 1125, artworkHeight / 735)
       : Math.min(width / 1452, height / 817);
     const offsetX = portrait
-      ? width * 0.22 - TX * scale
+      ? width * 0.23 - TX * scale
       : (width - 1452 * scale) / 2;
     const offsetY = portrait
-      ? height * 0.45 - TY * scale
+      ? artworkTop + width * 0.305 - TY * scale
       : (height - 817 * scale) / 2;
     ctx.setTransform(scale * pixelRatio, 0, 0, scale * pixelRatio, offsetX * pixelRatio, offsetY * pixelRatio);
     ctx.imageSmoothingEnabled = true;
