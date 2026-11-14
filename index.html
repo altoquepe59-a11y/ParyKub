@@ -904,6 +904,9 @@
     }
     .turn-pill[hidden] { display: none; }
     .turn-pill__label { color: #facc15; font-weight: 900; text-transform: uppercase; }
+    .turn-pill[data-player="mauro"] .turn-pill__label { color: #ff6268; }
+    .turn-pill[data-player="luisa"] .turn-pill__label { color: #ffc400; }
+    .turn-pill[data-player="sofi"] .turn-pill__label { color: #64baff; }
     .turn-pill__counts { font-weight: 600; }
     .turn-announcement {
       --turn-fill: #a7eb45;
@@ -1353,6 +1356,7 @@
               <div class="board-view-control__views" id="board-view-options" role="group" aria-label="Vistas de la mesa">
                 <button type="button" data-board-view="player">Frontal</button>
                 <button type="button" data-board-view="side">Lateral</button>
+                <button type="button" data-board-view="board">Tablero</button>
               </div>
             </div>
             <div class="board-3d" id="board-3d" role="application" aria-label="Mesa 3D. Arrastra fichas de tu soporte al centro para formar combinaciones; arrastra el fondo para girar la vista."></div>
@@ -2730,6 +2734,12 @@
         if (!state.players.length) return;
         const indicator = $('#turn-pill');
         const activePlayer = state.players[state.botAnimationSeat ?? state.currentSeat];
+        const activePlayerName = activePlayer.name.replace(/\s+\(bot\)$/i, '');
+        indicator.dataset.player = activePlayerName === 'Mauro'
+          ? 'mauro'
+          : activePlayerName === 'Luisa'
+            ? 'luisa'
+            : activePlayerName === 'Sofí' || activePlayerName === 'Sofi' ? 'sofi' : '';
         $('#turn-pill-label').textContent = state.ended
           ? 'Fin de la partida'
           : activePlayer.isBot ? `Turno de ${activePlayer.name}` : 'Tu turno';

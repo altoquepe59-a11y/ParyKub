@@ -731,6 +731,7 @@
       const botRackAnchors = new Map();
       let previousBotRackAnchors = new Map();
       const boardTileMeshes = new Map();
+      let boardFocusBounds = null;
       const botActors = [];
       let activeBotSeat = null;
       let botAnimationFrame = 0;
@@ -1112,13 +1113,23 @@
         return Math.max(horizontal, vertical, 22);
       }
 
+      function fitBoardRadius() {
+        const bounds = boardFocusBounds;
+        const halfWidth = bounds ? (bounds.maxX - bounds.minX) / 2 + 0.7 : 2;
+        const halfDepth = bounds ? (bounds.maxZ - bounds.minZ) / 2 + 0.7 : 1.5;
+        const tangent = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+        const horizontal = halfWidth / (tangent * Math.max(camera.aspect, 0.4));
+        const vertical = halfDepth / tangent;
+        return Math.max(4.5, horizontal, vertical) * 1.08;
+      }
+
       function maxZoomRadius() {
         const fitScale = currentView === 'player' ? 1.08 : viewScale;
         return Math.max(34, fitRadius() * fitScale * 1.15);
       }
 
       function clampZoomRadius(value) {
-        return Math.max(17, Math.min(maxZoomRadius(), value));
+        return Math.max(currentView === 'board' ? 4 : 17, Math.min(maxZoomRadius(), value));
       }
 
       function resize() {
@@ -1132,6 +1143,8 @@
           if (currentView === 'player') {
             radius = fitRadius() * 1.08;
             phi = 1.05;
+          } else if (currentView === 'board') {
+            radius = fitBoardRadius();
           } else {
             radius = fitRadius() * viewScale;
           }
@@ -1165,6 +1178,17 @@
           theta = 0;
           phi = 1.32;
           viewScale = 0.44;
+        } else if (name === 'board') {
+          const bounds = boardFocusBounds;
+          target.set(
+            bounds ? (bounds.minX + bounds.maxX) / 2 : 0,
+            0.12,
+            bounds ? (bounds.minZ + bounds.maxZ) / 2 : 0
+          );
+          theta = 0;
+          phi = 0.07;
+          viewScale = 1;
+          radius = fitBoardRadius();
         } else {
           target.set(0, 0.5, 1.3);
           theta = 0;
@@ -1172,8 +1196,8 @@
           phi = 1.05;
           viewScale = 1;
         }
-        if (name !== 'player') radius = fitRadius() * viewScale;
-        rackHandTiles.forEach((tile) => { tile.visible = name !== 'top'; });
+        if (name !== 'player' && name !== 'board') radius = fitRadius() * viewScale;
+        rackHandTiles.forEach((tile) => { tile.visible = name !== 'top' && name !== 'board'; });
       }
 
       function view(name) {
@@ -2607,7 +2631,7 @@
             rackHandTiles.push(rackTile);
             if (placedIds.has(tile.id)) rackTile.visible = false;
           }
-          rackTile.visible = currentView !== 'top' && !placedIds.has(tile.id);
+          rackTile.visible = currentView !== 'top' && currentView !== 'board' && !placedIds.has(tile.id);
         });
         dynamicPieces.updateMatrixWorld(true);
         tilesOnRack.forEach(({ tile, rackTile }) => {
@@ -2649,6 +2673,7 @@
         const maxColumns = 20;
         const tileSpacing = 0.55;
         const rowLayouts = [{ tiles: [], columns: 0 }];
+        const tileBounds = { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity };
         let rowLayout = rowLayouts[0];
         for (const meld of board) {
           const tiles = meld && Array.isArray(meld.tiles) ? meld.tiles : [];
@@ -2675,6 +2700,10 @@
           rowLayout.tiles.forEach(({ tile, column }) => {
             const x = startX + column * tileSpacing;
             const returnable = placedIds.has(tile.id) && Boolean(data.canSelect);
+            tileBounds.minX = Math.min(tileBounds.minX, x);
+            tileBounds.maxX = Math.max(tileBounds.maxX, x);
+            tileBounds.minZ = Math.min(tileBounds.minZ, z);
+            tileBounds.maxZ = Math.max(tileBounds.maxZ, z);
             addTile(
               tile,
               x,
@@ -2685,6 +2714,7 @@
             );
           });
         });
+        boardFocusBounds = Number.isFinite(tileBounds.minX) ? tileBounds : null;
         const selectedIds = data.selectedIds || new Set();
         (data.players || []).forEach((player, index) => addRack(player, index, Boolean(data.canSelect), selectedIds, placedIds));
         botActors.forEach((actor) => {
@@ -2696,6 +2726,7 @@
             actor.paintMoodIcon(expression);
           }
         });
+        if (currentView === 'board' && !userZoomed) configureView('board');
         animateBots();
       }
 
