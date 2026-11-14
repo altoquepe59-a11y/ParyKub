@@ -1,7 +1,7 @@
 'use strict';
 
 const CACHE_PREFIX = 'partykub-mobile-pwa-';
-const CACHE_VERSION = 'v13';
+const CACHE_VERSION = 'v14';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const CORE_ASSETS = [
   '/movil.html',
@@ -24,7 +24,13 @@ const CORE_ASSETS = [
   '/PartyKub-splash-rainbow-ribbon.png',
   '/PartyKub-splash-star.png',
   '/PartyKub-splash-word-hd.png',
-  '/PartyKub-vertical-play-button.png'
+  '/PartyKub-vertical-play-button.png',
+  '/assets/luisa-stickers/veamos-que-tengo.png',
+  '/assets/luisa-stickers/dejame-pensar.png',
+  '/assets/luisa-stickers/escalera.png',
+  '/assets/luisa-stickers/mira-esto.png',
+  '/assets/luisa-stickers/robar.png',
+  '/assets/luisa-stickers/que-mala-suerte.png'
 ];
 
 function versionedUrl(url) {

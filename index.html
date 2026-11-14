@@ -818,6 +818,10 @@
     .question-art { display: none; }
     .question-target { z-index: 2; display: block; min-height: 14px; margin: 4px 0 0; color: #748198; font-size: 10px; }
     .turn-status { margin: 0 0 9px; color: #fff; font-family: "Comic Sans MS", "Comic Sans", cursive; font-size: 14px; font-weight: 700; line-height: 1.4; -webkit-text-stroke: 0.3px #17202b; paint-order: stroke fill; text-shadow: 0 1px 2px #0006; }
+    @keyframes luisa-sticker-float {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-5px) rotate(2deg); }
+    }
     .bot-dialog {
       position: fixed;
       z-index: 9999;
@@ -840,6 +844,9 @@
       pointer-events: none;
     }
     .bot-dialog[hidden] { display: none; }
+    .bot-dialog--with-sticker { display: flex; width: min(440px, calc(100vw - 24px)); align-items: center; gap: 10px; padding: 8px 12px 8px 18px; border-radius: 24px; text-align: left; }
+    .bot-dialog--with-sticker .bot-dialog__text { min-width: 0; flex: 1; text-align: center; }
+    .bot-dialog__sticker { width: clamp(88px, 14vw, 116px); height: clamp(72px, 14vw, 108px); flex: 0 0 auto; object-fit: contain; filter: drop-shadow(0 3px 4px #0006); animation: luisa-sticker-float 1.7s ease-in-out infinite; }
     .bot-dialog--response {
       display: grid;
       width: min(620px, calc(100vw - 24px));
@@ -868,6 +875,9 @@
       cursor: pointer;
     }
     .bot-dialog__continue[hidden] { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .bot-dialog__sticker { animation: none; }
+    }
     .turn-pill {
       position: absolute;
       z-index: 5;
@@ -1307,6 +1317,7 @@
     <div id="bot-dialog" class="bot-dialog" role="status" aria-live="polite" hidden>
       <div id="bot-dialog-question" class="bot-dialog__card-slot" hidden></div>
       <span id="bot-dialog-text" class="bot-dialog__text"></span>
+      <img id="bot-dialog-sticker" class="bot-dialog__sticker" alt="" aria-hidden="true" hidden>
       <button id="bot-dialog-continue" class="bot-dialog__continue" type="button" hidden>Continuar</button>
     </div>
     <header class="game-header">
@@ -2397,6 +2408,7 @@
         state.botExpressionSeat = null;
         state.botExpression = 'idle';
         clearBotDialog();
+        shownLuisaStickers.clear();
         boardActionsMinimized = false;
         $('#board-actions').classList.remove('is-minimized');
         $('#board-actions-toggle').setAttribute('aria-expanded', 'true');
@@ -2432,16 +2444,43 @@
         happy: ['¡Jugada hecha!', '¡Toma esa!', '¡Me quedo con menos fichas!'],
         sad: ['Nada... tengo que robar.', 'Qué mala suerte.', 'No tengo jugada.']
       };
+      const LUISA_STICKER_MESSAGES = Object.freeze({
+        'Veamos qué tengo...': 'veamos-que-tengo',
+        'Mmm... déjame pensar.': 'dejame-pensar',
+        '¿Y si pruebo con esta escalera?': 'escalera',
+        'Mira esto.': 'mira-esto',
+        'Nada... tengo que robar.': 'robar',
+        'Qué mala suerte.': 'que-mala-suerte'
+      });
+      const shownLuisaStickers = new Set();
       let botDialogTimer = null;
+
+      function hideBotSticker() {
+        const sticker = $('#bot-dialog-sticker');
+        sticker.hidden = true;
+        sticker.removeAttribute('src');
+        $('#bot-dialog').classList.remove('bot-dialog--with-sticker');
+      }
 
       function showBotDialog(name, message, duration = 2300) {
         const dialog = $('#bot-dialog');
         clearTimeout(botDialogTimer);
+        hideBotSticker();
         dialog.classList.remove('bot-dialog--response');
         const questionCardSlot = $('#bot-dialog-question');
         questionCardSlot.hidden = true;
         questionCardSlot.replaceChildren();
         $('#bot-dialog-text').textContent = `${name}: ${message}`;
+        const stickerName = LUISA_STICKER_MESSAGES[message];
+        if (name.replace(/\s+\(bot\)$/, '') === 'Luisa'
+          && stickerName
+          && !shownLuisaStickers.has(stickerName)) {
+          shownLuisaStickers.add(stickerName);
+          const sticker = $('#bot-dialog-sticker');
+          sticker.src = `assets/luisa-stickers/${stickerName}.png`;
+          sticker.hidden = false;
+          dialog.classList.add('bot-dialog--with-sticker');
+        }
         $('#bot-dialog-continue').hidden = true;
         dialog.hidden = false;
         botDialogTimer = setTimeout(() => {
@@ -2454,6 +2493,7 @@
         const dialog = $('#bot-dialog');
         clearTimeout(botDialogTimer);
         botDialogTimer = null;
+        hideBotSticker();
         const responderName = state.players[seat].name.replace(/\s+\(bot\)$/, '');
         const answerIndex = BOT_ANSWER_INDEX[responderName] ?? seat - 1;
         const answer = BOT_ANSWERS[QUESTIONS.indexOf(state.question)]?.[answerIndex];
@@ -2491,6 +2531,7 @@
         clearTimeout(botDialogTimer);
         botDialogTimer = null;
         const dialog = $('#bot-dialog');
+        hideBotSticker();
         dialog.hidden = true;
         dialog.classList.remove('bot-dialog--response');
         const questionCardSlot = $('#bot-dialog-question');
