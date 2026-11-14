@@ -768,13 +768,13 @@
       cursorSkinBump.repeat.set(2, 2);
       cursorSkinBump.anisotropy = 4;
       const cursorSkin = new THREE.MeshStandardMaterial({
-        color: 0xf6c491,
+        color: 0xf0b584,
         roughness: 0.62,
         bumpMap: cursorSkinBump,
         bumpScale: 0.012
       });
       const cursorSkinLight = new THREE.MeshStandardMaterial({
-        color: 0xf8cda9,
+        color: 0xf8c79e,
         roughness: 0.56,
         bumpMap: cursorSkinBump,
         bumpScale: 0.012
@@ -800,7 +800,7 @@
         else palmHeight -= 0.12 * thenar * Math.max(0, -x) * (-y)
           + 0.06 * hypothenar * Math.max(0, x) * (-y);
         palmHeight *= 0.82 + 0.18 * towardKnuckles;
-        palmPositions.setXYZ(index, x * palmWidth * 0.48, palmHeight * 0.72, -0.06 + z * 0.62);
+        palmPositions.setXYZ(index, x * palmWidth * 0.56, palmHeight * 0.72, -0.06 + z * 0.62);
       }
       palmGeometry.computeVertexNormals();
       const palm = new THREE.Mesh(palmGeometry, cursorSkin);
@@ -811,30 +811,41 @@
         let parent = root;
         let tip = null;
         lengths.forEach((length, index) => {
-          const bone = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 14), index === 1 ? cursorSkin : cursorSkinLight);
-          bone.scale.set(width * (1 - index * 0.08), width * 0.9 * (1 - index * 0.08), length * 0.58);
-          bone.position.z = -length * 0.48;
+          const startRadius = width * (index === 0 ? 1 : 1 - index * 0.09);
+          const endRadius = width * (index === lengths.length - 1 ? 0.68 : 1 - (index + 1) * 0.09);
+          const joint = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 14), cursorSkin);
+          joint.scale.set(startRadius * 0.88, startRadius * 0.76, startRadius * 0.92);
+          parent.add(joint);
+
+          const profile = [];
+          for (let sample = 0; sample <= 12; sample += 1) {
+            const progress = sample / 12;
+            const radius = (startRadius + (endRadius - startRadius) * progress)
+              * (1 - 0.06 * Math.sin(Math.PI * progress));
+            profile.push(new THREE.Vector2(radius, length * progress));
+          }
+          const geometry = new THREE.LatheGeometry(profile, 24);
+          geometry.rotateX(-Math.PI / 2);
+          const bone = new THREE.Mesh(geometry, cursorSkin);
+          bone.scale.y = 0.9;
           parent.add(bone);
 
-          const hinge = new THREE.Group();
-          hinge.position.z = -length;
-          parent.add(hinge);
-          const knuckle = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), cursorSkin);
-          knuckle.scale.set(width * 0.98, width * 0.84, width * 0.92);
-          hinge.add(knuckle);
-
           if (index < lengths.length - 1) {
+            const hinge = new THREE.Group();
+            hinge.position.z = -length;
+            parent.add(hinge);
             joints.push(hinge);
             parent = hinge;
           } else {
             tip = new THREE.Group();
-            hinge.add(tip);
+            tip.position.z = -length;
+            parent.add(tip);
             const fingertip = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), cursorSkinLight);
-            fingertip.scale.set(width * 0.84, width * 0.8, width * 0.95);
+            fingertip.scale.set(endRadius * 0.88, endRadius * 0.82, endRadius * 1.05);
             tip.add(fingertip);
             const nail = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), cursorNail);
-            nail.scale.set(width * 0.58, width * 0.13, length * 0.19);
-            nail.position.set(0, width * 0.82, -length * 0.56);
+            nail.scale.set(width * 0.52, width * 0.12, length * 0.2);
+            nail.position.set(0, startRadius * 0.84, -length * 0.58);
             parent.add(nail);
           }
         });
@@ -842,9 +853,11 @@
         root.userData.tip = tip;
       };
 
-      [-0.39, -0.13, 0.14, 0.39].forEach((x, index) => {
+      const cursorFingerXs = [-0.39, -0.13, 0.14, 0.39];
+      const cursorFingerZs = [-0.49, -0.54, -0.52, -0.44];
+      cursorFingerXs.forEach((x, index) => {
         const digit = new THREE.Group();
-        digit.position.set(x, -0.035, -0.52);
+        digit.position.set(x, -0.035, cursorFingerZs[index]);
         const lengths = [0.52, 0.58, 0.54, 0.42];
         const length = lengths[index];
         const width = [0.092, 0.096, 0.092, 0.082][index];
@@ -853,22 +866,18 @@
         cursorDigits.push(digit);
         cursorHand.add(digit);
       });
-      const cursorFingerXs = [-0.39, -0.13, 0.14, 0.39];
       cursorFingerXs.slice(0, -1).forEach((x, index) => {
         const web = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), cursorSkin);
         web.scale.set(0.055, 0.055, 0.13);
-        web.position.set((x + cursorFingerXs[index + 1]) / 2, -0.01, -0.49);
+        web.position.set(
+          (x + cursorFingerXs[index + 1]) / 2,
+          -0.01,
+          (cursorFingerZs[index] + cursorFingerZs[index + 1]) / 2 - 0.01
+        );
         cursorHand.add(web);
       });
-      cursorFingerXs.forEach((x, index) => {
-        const knuckle = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), cursorSkin);
-        const width = [0.092, 0.096, 0.092, 0.082][index];
-        knuckle.scale.set(width * 0.98, width * 0.72, width * 0.8);
-        knuckle.position.set(x, 0.14, -0.49);
-        cursorHand.add(knuckle);
-      });
 
-      cursorThumb.position.set(-0.31, -0.05, -0.05);
+      cursorThumb.position.set(-0.29, -0.05, -0.05);
       makeCursorDigit(cursorThumb, [0.28, 0.22, 0.16], 0.12);
       cursorHand.add(cursorThumb);
       const wrist = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 16), cursorSkin);
