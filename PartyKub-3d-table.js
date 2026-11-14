@@ -732,23 +732,80 @@
       let cursorFingerAnchor = null;
       let heldHandTile = null;
       let cursorHandAnimationFrame = 0;
+      let cursorHandMessageTimer = 0;
+      let cursorHandMessageUntil = 0;
+      let cursorHandReaction = 'idle';
+      let cursorHandReactionStartedAt = 0;
+      let cursorHandReactionDuration = 0;
+      let cursorHandReactionUntil = 0;
+      let cursorHandHoveredTileId = null;
 
       const cursorHand = new THREE.Group();
-      const cursorSkin = new THREE.MeshStandardMaterial({ color: 0x985139, roughness: 0.72 });
-      const cursorSkinLight = new THREE.MeshStandardMaterial({ color: 0xc77a50, roughness: 0.72 });
+      cursorHand.rotation.order = 'YXZ';
+      const cursorSkin = new THREE.MeshStandardMaterial({ color: 0xf6c491, roughness: 0.5 });
+      const cursorSkinLight = new THREE.MeshStandardMaterial({ color: 0xfbd3ae, roughness: 0.48 });
+      const cursorSkinShadow = new THREE.MeshStandardMaterial({ color: 0xc98458, roughness: 0.72 });
+      const cursorNail = new THREE.MeshStandardMaterial({ color: 0xf6cfc4, roughness: 0.34 });
       const cursorDigits = [];
       const cursorThumb = new THREE.Group();
-      const cursorHandPalm = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 18), cursorSkin);
-      cursorHandPalm.scale.set(0.36, 0.115, 0.43);
-      cursorHandPalm.position.set(0, 0, 0.02);
-      cursorHand.add(cursorHandPalm);
+      cursorThumb.rotation.order = 'YXZ';
+      const palmGeometry = new THREE.SphereGeometry(1, 32, 24);
+      const palmPositions = palmGeometry.attributes.position;
+      const signedPower = (value) => Math.sign(value) * Math.pow(Math.abs(value), 0.72);
+      for (let index = 0; index < palmPositions.count; index += 1) {
+        const x = signedPower(palmPositions.getX(index));
+        const y = signedPower(palmPositions.getY(index));
+        const z = signedPower(palmPositions.getZ(index));
+        const towardKnuckles = (1 - z) / 2;
+        const palmWidth = 0.58 + 0.27 * towardKnuckles + (x < 0 ? 0.08 : 0.04);
+        let palmHeight = y * (y > 0 ? 0.27 : 0.29);
+        if (y > 0) palmHeight += 0.035 * (1 - x * x) * y;
+        palmPositions.setXYZ(index, x * palmWidth * 0.36, palmHeight * 0.115, 0.02 + z * 0.43);
+      }
+      palmGeometry.computeVertexNormals();
+      const palm = new THREE.Mesh(palmGeometry, cursorSkin);
+      cursorHand.add(palm);
 
-      const addCursorSegment = (parent, length, radius, depth, material, z) => {
-        const segment = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 14), material);
-        segment.scale.set(radius, depth, length / 2);
-        segment.position.z = z - length / 2;
-        parent.add(segment);
-        return segment;
+      const makeCursorDigit = (root, lengths, width) => {
+        const joints = [root];
+        let parent = root;
+        let tip = null;
+        lengths.forEach((length, index) => {
+          const bone = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 14), index === 1 ? cursorSkin : cursorSkinLight);
+          bone.scale.set(width * (1 - index * 0.08), 0.062 * (1 - index * 0.08), length * 0.58);
+          bone.position.z = -length * 0.48;
+          parent.add(bone);
+
+          const hinge = new THREE.Group();
+          hinge.position.z = -length;
+          parent.add(hinge);
+          const knuckle = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), cursorSkin);
+          knuckle.scale.set(width * 0.98, 0.058, width * 0.92);
+          hinge.add(knuckle);
+
+          if (index < lengths.length - 1) {
+            const crease = new THREE.Mesh(
+              new THREE.TorusGeometry(width * 0.7, 0.0045, 5, 12),
+              cursorSkinShadow
+            );
+            crease.scale.y = 0.72;
+            hinge.add(crease);
+            joints.push(hinge);
+            parent = hinge;
+          } else {
+            tip = new THREE.Group();
+            hinge.add(tip);
+            const fingertip = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), cursorSkinLight);
+            fingertip.scale.set(width * 0.92, 0.057, width * 1.05);
+            tip.add(fingertip);
+            const nail = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), cursorNail);
+            nail.scale.set(width * 0.58, 0.012, length * 0.2);
+            nail.position.set(0, 0.044, -length * 0.45);
+            parent.add(nail);
+          }
+        });
+        root.userData.joints = joints;
+        root.userData.tip = tip;
       };
 
       [-0.25, -0.09, 0.09, 0.25].forEach((x, index) => {
@@ -757,22 +814,55 @@
         const lengths = [0.44, 0.56, 0.62, 0.52];
         const length = lengths[index];
         const width = index === 2 ? 0.066 : 0.06;
-        addCursorSegment(digit, length * 0.5, width, 0.068, cursorSkinLight, 0);
-        addCursorSegment(digit, length * 0.33, width * 0.88, 0.061, cursorSkin, -length * 0.43);
-        addCursorSegment(digit, length * 0.31, width * 0.82, 0.058, cursorSkinLight, -length * 0.72);
+        makeCursorDigit(digit, [length * 0.43, length * 0.33, length * 0.24], width);
         digit.userData.index = index;
         cursorDigits.push(digit);
         cursorHand.add(digit);
       });
 
       cursorThumb.position.set(0.29, 0.005, 0.09);
-      addCursorSegment(cursorThumb, 0.25, 0.085, 0.078, cursorSkinLight, -0.05);
-      addCursorSegment(cursorThumb, 0.2, 0.072, 0.067, cursorSkin, -0.23);
+      makeCursorDigit(cursorThumb, [0.23, 0.19, 0.12], 0.085);
       cursorHand.add(cursorThumb);
       const wrist = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 16), cursorSkin);
       wrist.scale.set(0.25, 0.095, 0.29);
       wrist.position.set(0, -0.005, 0.38);
       cursorHand.add(wrist);
+      cursorDigits.forEach((digit, index) => {
+        const x = [-0.25, -0.09, 0.09, 0.25][index];
+        const tendon = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(x * 0.2, 0.09, 0.32),
+          new THREE.Vector3(x * 0.55, 0.105, 0.02),
+          new THREE.Vector3(x, 0.095, -0.28)
+        ]);
+        cursorHand.add(new THREE.Mesh(
+          new THREE.TubeGeometry(tendon, 10, 0.006, 5, false),
+          cursorSkinLight
+        ));
+      });
+
+      const cursorHandMessage = document.createElement('div');
+      cursorHandMessage.setAttribute('aria-hidden', 'true');
+      Object.assign(cursorHandMessage.style, {
+        position: 'absolute',
+        zIndex: '5',
+        left: '0',
+        top: '0',
+        maxWidth: 'calc(100% - 24px)',
+        padding: '7px 12px',
+        border: '1px solid rgba(15, 23, 42, .08)',
+        borderRadius: '999px',
+        background: 'rgba(255, 255, 255, .96)',
+        color: '#1e293b',
+        boxShadow: '0 5px 18px rgba(15, 23, 42, .2)',
+        font: '700 12px/1.2 system-ui, sans-serif',
+        textAlign: 'center',
+        whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+        opacity: '0',
+        transform: 'translate(-50%, -100%) scale(.9)',
+        transition: 'opacity .16s ease, transform .16s ease'
+      });
+      element.appendChild(cursorHandMessage);
       cursorHand.scale.setScalar(1.9);
       cursorHand.visible = false;
       cursorHand.traverse((part) => {
@@ -790,32 +880,132 @@
       });
       scene.add(cursorHand);
 
+      function updateCursorHandMessage() {
+        if (!cursorHand.visible || !cursorHandMessageUntil) return;
+        cursorHand.updateMatrixWorld(true);
+        const point = cursorHand.localToWorld(new THREE.Vector3(0, 0.48, -0.45)).project(camera);
+        const rect = element.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const x = (point.x * 0.5 + 0.5) * rect.width;
+        const y = (-point.y * 0.5 + 0.5) * rect.height;
+        cursorHandMessage.style.left = `${Math.max(75, Math.min(rect.width - 75, x))}px`;
+        cursorHandMessage.style.top = `${Math.max(36, Math.min(rect.height - 18, y))}px`;
+      }
+
+      function setCursorHandReaction(kind, messages, duration = 1400) {
+        if (!pointerCanHandleTiles) return;
+        const choices = Array.isArray(messages) ? messages : [messages];
+        cursorHandReaction = kind;
+        cursorHandReactionStartedAt = performance.now();
+        cursorHandReactionDuration = duration;
+        cursorHandReactionUntil = cursorHandReactionStartedAt + duration;
+        cursorHandMessage.textContent = choices[Math.floor(Math.random() * choices.length)];
+        cursorHandMessageUntil = cursorHandReactionUntil;
+        cursorHandMessage.style.opacity = '1';
+        cursorHandMessage.style.transform = 'translate(-50%, calc(-100% - 9px)) scale(1)';
+        if (cursorHandMessageTimer) clearTimeout(cursorHandMessageTimer);
+        cursorHandMessageTimer = window.setTimeout(() => {
+          cursorHandMessageTimer = 0;
+          cursorHandMessageUntil = 0;
+          cursorHandMessage.style.opacity = '0';
+          cursorHandMessage.style.transform = 'translate(-50%, -100%) scale(.9)';
+        }, duration);
+        updateCursorHandMessage();
+        if (cursorHand.visible && !cursorHandAnimationFrame) {
+          cursorHandAnimationFrame = requestAnimationFrame(animateCursorHand);
+        }
+      }
+
+      function getCursorGrabFeedback(mesh) {
+        if (mesh.userData.isJoker) {
+          return { kind: 'joker', messages: ['¡Un comodín! 🃏', '¡El comodín! ¡Qué suerte!'] };
+        }
+        const feedback = {
+          red: { kind: 'red', messages: ['¡Roja y atrevida! 🔥', '¡Uy, qué caliente!'] },
+          blue: { kind: 'blue', messages: ['Azul, ¡me encanta! 💙', '¡Qué fresquita!'] },
+          yellow: { kind: 'yellow', messages: ['¡Qué brillante! ✨', '¡Amarilla y brillante!'] },
+          black: { kind: 'black', messages: ['Mmm… misteriosa 🕵️', 'Negra y elegante'] }
+        };
+        return feedback[mesh.userData.tileColor] || { kind: 'grab', messages: ['¡La tengo! 🤏', 'Con cuidado…'] };
+      }
+
+      function hideCursorHandMessage() {
+        if (cursorHandMessageTimer) clearTimeout(cursorHandMessageTimer);
+        cursorHandMessageTimer = 0;
+        cursorHandMessageUntil = 0;
+        cursorHandMessage.style.opacity = '0';
+        cursorHandMessage.style.transform = 'translate(-50%, -100%) scale(.9)';
+      }
+
       function animateCursorHand() {
         cursorHandAnimationFrame = 0;
         if (disposed || !cursorHand.visible) return;
         const gripping = cursorHandMode === 'grabbing';
         const pointing = cursorHandMode === 'pointing';
-        const time = performance.now() * 0.001;
+        const now = performance.now();
+        const time = now * 0.001;
+        const reactionActive = cursorHandReactionUntil > now;
+        const reactionProgress = reactionActive && cursorHandReactionDuration
+          ? Math.max(0, Math.min(1, (now - cursorHandReactionStartedAt) / cursorHandReactionDuration))
+          : 1;
+        const reactionWeight = reactionActive ? Math.sin(reactionProgress * Math.PI) : 0;
+        if (!reactionActive) {
+          cursorHandReaction = 'idle';
+          cursorHandReactionUntil = 0;
+        }
         cursorDigits.forEach((digit) => {
           const index = digit.userData.index;
           const curled = gripping || (pointing && index !== 2);
-          const flex = curled ? -0.62 - index * 0.025 : 0;
+          const flex = gripping ? 0.9 : curled ? 0.72 : 0.02;
           const spread = pointing
             ? (index === 2 ? 0.04 : (index - 1.5) * 0.12)
             : (index - 1.5) * 0.075;
-          digit.rotation.x += (flex - digit.rotation.x) * 0.2;
           digit.rotation.z += (spread - digit.rotation.z) * 0.2;
+          digit.userData.joints.forEach((joint, jointIndex) => {
+            const curlAmount = [0.72, 1, 0.62][jointIndex];
+            const flutter = reactionActive && cursorHandReaction === 'place'
+              ? Math.sin(time * 22 + index * 1.4) * 0.1 * reactionWeight
+              : 0;
+            const targetFlex = -flex * curlAmount + flutter;
+            joint.rotation.x += (targetFlex - joint.rotation.x) * 0.2;
+          });
         });
         const thumbPose = gripping ? -0.95 : pointing ? -0.35 : -0.2 + Math.sin(time * 2.4) * 0.025;
         cursorThumb.rotation.y += (thumbPose - cursorThumb.rotation.y) * 0.22;
         cursorThumb.rotation.z += ((gripping ? -0.4 : pointing ? -0.25 : -0.55) - cursorThumb.rotation.z) * 0.2;
-        const bob = gripping ? 0 : Math.sin(time * 3) * 0.012;
+        cursorThumb.userData.joints.slice(1).forEach((joint, index) => {
+          const flex = gripping ? -0.5 - index * 0.16 : -0.08;
+          joint.rotation.x += (flex - joint.rotation.x) * 0.2;
+        });
+        const reactionYaw = reactionActive && cursorHandReaction === 'place'
+          ? Math.sin(time * 10) * 0.16 * reactionWeight
+          : reactionActive && cursorHandReaction === 'oops'
+            ? Math.sin(time * 13) * 0.1 * reactionWeight
+            : reactionActive && cursorHandReaction === 'red'
+              ? Math.sin(time * 15) * 0.08 * reactionWeight
+              : 0;
+        const reactionRoll = reactionActive && (cursorHandReaction === 'place' || cursorHandReaction === 'return')
+          ? Math.sin(time * 12) * 0.18 * reactionWeight
+          : reactionActive && cursorHandReaction === 'oops'
+            ? Math.sin(time * 13) * 0.14 * reactionWeight
+            : reactionActive && cursorHandReaction === 'black'
+              ? Math.sin(time * 13) * 0.12 * reactionWeight
+              : 0;
+        const reactionPitch = reactionActive && cursorHandReaction === 'blue'
+          ? Math.sin(time * 10) * 0.08 * reactionWeight
+          : 0.015 * Math.sin(time * 2);
+        const reactionBounce = reactionActive && (cursorHandReaction === 'joker' || cursorHandReaction === 'yellow')
+          ? Math.abs(Math.sin(time * 12)) * 0.025 * reactionWeight
+          : 0;
+        cursorHand.rotation.set(reactionPitch, theta + reactionYaw, reactionRoll, 'YXZ');
+        const bob = (gripping ? 0 : Math.sin(time * 3) * 0.012) + reactionBounce;
         if (cursorFingerAnchor && !gripping) {
           positionCursorHandAtFinger(cursorFingerAnchor);
         } else {
           cursorHand.position.y = cursorHandBaseY + bob;
         }
         positionHeldTile();
+        updateCursorHandMessage();
         draw();
         cursorHandAnimationFrame = requestAnimationFrame(animateCursorHand);
       }
@@ -2084,6 +2274,8 @@
         mesh.userData.tileId = tile.id;
         mesh.userData.canSelect = canSelect;
         mesh.userData.sourceHand = returnable;
+        mesh.userData.tileColor = tile.color;
+        mesh.userData.isJoker = Boolean(tile.joker);
         dynamicPieces.add(mesh);
         clickableTiles.push(mesh);
         boardTileMeshes.set(tile.id, mesh);
@@ -2128,6 +2320,8 @@
           mesh.userData.canSelect = canSelect;
           mesh.userData.sourceHand = group.parent && group.parent.userData.seat === 0;
           mesh.userData.sourceHandRack = mesh.userData.sourceHand;
+          mesh.userData.tileColor = tile.color;
+          mesh.userData.isJoker = Boolean(tile.joker);
           clickableTiles.push(mesh);
         }
         group.add(mesh);
@@ -2361,6 +2555,10 @@
         element.classList.toggle('is-hand-cursor-enabled', pointerCanHandleTiles);
         if (!pointerCanHandleTiles && !dragging) {
           cursorHand.visible = false;
+          cursorHandHoveredTileId = null;
+          cursorHandReaction = 'idle';
+          cursorHandReactionUntil = 0;
+          hideCursorHandMessage();
           if (cursorHandAnimationFrame) {
             cancelAnimationFrame(cursorHandAnimationFrame);
             cursorHandAnimationFrame = 0;
@@ -2650,6 +2848,7 @@
             handDragging = null;
             heldHandTile = null;
             cursorHand.visible = false;
+            hideCursorHandMessage();
             element.classList.remove('is-hand-cursor-enabled', 'is-grabbing-tile');
           }
           event.preventDefault();
@@ -2703,9 +2902,16 @@
           pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
           raycaster.setFromCamera(pointer, camera);
           const hit = raycaster.intersectObjects(clickableTiles, false)[0];
-          setCursorHandMode(hit?.object.userData.canSelect ? 'pointing' : 'open');
-          cursorFingerAnchor = hit?.object.userData.canSelect ? hit.point.clone() : null;
-          updateCursorHandPosition(event, hit?.object.userData.canSelect ? hit.point : null);
+          const selectableTile = hit?.object.userData.canSelect ? hit.object : null;
+          setCursorHandMode(selectableTile ? 'pointing' : 'open');
+          cursorFingerAnchor = selectableTile ? hit.point.clone() : null;
+          if (selectableTile && selectableTile.userData.tileId !== cursorHandHoveredTileId) {
+            cursorHandHoveredTileId = selectableTile.userData.tileId;
+            setCursorHandReaction('hover', ['¡Voy por ella!', '¿Esa ficha? 👀'], 1100);
+          } else if (!selectableTile) {
+            cursorHandHoveredTileId = null;
+          }
+          updateCursorHandPosition(event, selectableTile ? hit.point : null);
           return;
         }
         const dx = event.clientX - dragging.x;
@@ -2717,6 +2923,8 @@
             handDragging.foregroundState = setForeground(handDragging.mesh, 21);
             element.classList.add('is-grabbing-tile');
             setCursorHandMode('grabbing');
+            const feedback = getCursorGrabFeedback(handDragging.mesh);
+            setCursorHandReaction(feedback.kind, feedback.messages, 1300);
           }
         }
         if (handDragging?.moved) {
@@ -2725,6 +2933,8 @@
           moveHandTile(event);
         } else if (dragging.moved) {
           cursorHand.visible = false;
+          cursorHandHoveredTileId = null;
+          hideCursorHandMessage();
           element.classList.remove('is-hand-cursor-enabled');
           userZoomed = true;
           theta -= dx * 0.008;
@@ -2753,13 +2963,21 @@
           heldHandTile = null;
           if (handDrag.fromBoard && isOverPlayerRack(event)) {
             handDragging = null;
-            if (onReturn) onReturn(tileId);
-            else restoreHandTile(handDrag);
+            if (onReturn) {
+              onReturn(tileId);
+              setCursorHandReaction('return', ['¡De vuelta al soporte!', '¡En su lugar! 👌']);
+            } else restoreHandTile(handDrag);
           } else if (!handDrag.fromBoard && !isOverPlayerRack(event) && getBoardDropPoint(event)) {
             handDragging = null;
-            if (onDrop) onDrop(tileId);
-            else onSelect(tileId);
+            if (onDrop) {
+              onDrop(tileId);
+              setCursorHandReaction('place', ['¡A la mesa!', '¡Perfecto! 👌']);
+            } else {
+              onSelect(tileId);
+              setCursorHandReaction('select', '¡Ficha seleccionada!');
+            }
           } else {
+            setCursorHandReaction('oops', ['¡Ups! La regreso a su sitio.', 'Prueba otra vez…']);
             restoreHandTile(handDrag);
           }
         } else if (!dragging.moved) {
@@ -2768,11 +2986,15 @@
           pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
           raycaster.setFromCamera(pointer, camera);
           const hit = raycaster.intersectObjects(clickableTiles, false)[0];
-          if (hit && hit.object.userData.canSelect) onSelect(hit.object.userData.tileId);
+          if (hit && hit.object.userData.canSelect) {
+            onSelect(hit.object.userData.tileId);
+            setCursorHandReaction('select', ['¡La vi! 👌', '¡Esa ficha!']);
+          }
         }
         dragging = null;
         handDragging = null;
         heldHandTile = null;
+        cursorHandHoveredTileId = null;
         if (pointerCanHandleTiles) {
           setCursorHandMode('open');
           cursorFingerAnchor = null;
@@ -2792,8 +3014,8 @@
       function positionHeldTile() {
         if (!heldHandTile || !handDragging?.moved) return;
         cursorHand.updateMatrixWorld(true);
-        const indexTip = cursorDigits[2].localToWorld(new THREE.Vector3(0, 0, -0.62));
-        const thumbTip = cursorThumb.localToWorld(new THREE.Vector3(0, 0, -0.25));
+        const indexTip = cursorDigits[2].userData.tip.getWorldPosition(new THREE.Vector3());
+        const thumbTip = cursorThumb.userData.tip.getWorldPosition(new THREE.Vector3());
         heldHandTile.position.copy(indexTip).add(thumbTip).multiplyScalar(0.5);
         heldHandTile.position.y += 0.035;
         heldHandTile.rotation.set(-0.035, theta, handDragging.roll || 0);
@@ -2802,7 +3024,7 @@
       function updateCursorHandPosition(event, targetPoint = null, gripping = false) {
         const point = targetPoint || getPlanePoint(event, 0.12);
         if (!point || !pointerCanHandleTiles) return;
-        cursorHand.rotation.set(0, theta, 0);
+        cursorHand.rotation.set(0, theta, 0, 'YXZ');
         if (gripping) {
           cursorFingerAnchor = null;
           const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), theta);
@@ -2826,24 +3048,21 @@
       }
 
       function positionCursorHandAtFinger(point) {
-        const index = cursorDigits[2];
-        const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), theta);
-        const tipOffset = new THREE.Vector3(0, 0, -0.62 * 1.03)
-          .applyEuler(index.rotation)
-          .add(index.position)
-          .multiplyScalar(cursorHand.scale.x)
-          .applyQuaternion(yaw);
-        cursorHand.position.set(
-          point.x - tipOffset.x,
-          point.y - tipOffset.y,
-          point.z - tipOffset.z
-        );
+        cursorHand.updateMatrixWorld(true);
+        const tipOffset = cursorDigits[2].userData.tip
+          .getWorldPosition(new THREE.Vector3())
+          .sub(cursorHand.position);
+        cursorHand.position.copy(point).sub(tipOffset);
         cursorHandBaseY = cursorHand.position.y;
       }
 
       function pointerLeave() {
         if (dragging) return;
         cursorHand.visible = false;
+        cursorHandHoveredTileId = null;
+        cursorHandReaction = 'idle';
+        cursorHandReactionUntil = 0;
+        hideCursorHandMessage();
         if (cursorHandAnimationFrame) {
           cancelAnimationFrame(cursorHandAnimationFrame);
           cursorHandAnimationFrame = 0;
@@ -2962,6 +3181,7 @@
           if (observer) observer.disconnect();
           else window.removeEventListener('resize', resize);
           if (cursorHandAnimationFrame) cancelAnimationFrame(cursorHandAnimationFrame);
+          if (cursorHandMessageTimer) clearTimeout(cursorHandMessageTimer);
           clearPieces();
           disposeTree(table);
           disposeTree(cursorHand);

@@ -12,6 +12,9 @@ services:
       - path: /sw.js
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
+      - path: /PartyKub-3d-table.js
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
       - path: /manifest.json
         name: Cache-Control
         value: no-cache
