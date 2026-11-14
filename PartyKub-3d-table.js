@@ -728,6 +728,7 @@
       let cancelActiveBotFlight = null;
       let pointerCanHandleTiles = false;
       let cursorHandMode = 'open';
+      const cursorHandFlip = Math.PI;
       let cursorHandPitch = -0.12;
       let cursorHandBaseY = 0.27;
       let cursorFingerAnchor = null;
@@ -1005,7 +1006,7 @@
           : 0;
         const targetPitch = gripping ? -0.5 : pointing ? -0.32 : -0.12;
         cursorHandPitch += (targetPitch - cursorHandPitch) * 0.16;
-        cursorHand.rotation.set(cursorHandPitch + reactionPitch, theta + reactionYaw, reactionRoll, 'YXZ');
+        cursorHand.rotation.set(cursorHandFlip - cursorHandPitch + reactionPitch, theta + reactionYaw, reactionRoll, 'YXZ');
         const bob = (gripping ? 0 : Math.sin(time * 3) * 0.012) + reactionBounce;
         if (cursorFingerAnchor && !gripping) {
           positionCursorHandAtFinger(cursorFingerAnchor);
@@ -3034,7 +3035,7 @@
         if (!point || !pointerCanHandleTiles) return;
         if (gripping) {
           cursorFingerAnchor = null;
-          cursorHand.rotation.set(cursorHandPitch, theta, 0, 'YXZ');
+          cursorHand.rotation.set(cursorHandFlip - cursorHandPitch, theta, 0, 'YXZ');
           cursorHand.position.set(0, 0, 0);
           cursorHand.updateMatrixWorld(true);
           const indexTip = cursorDigits[0].userData.tip.getWorldPosition(new THREE.Vector3());
