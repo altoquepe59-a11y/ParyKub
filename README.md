@@ -6,8 +6,10 @@ guardado local y en la nube de las partidas.
 ## Ejecutar
 
 El sitio estático se publica desde la raíz de este repositorio. Render sirve
-`index.html` y despliega los cambios de `main`. También puedes abrirlo en un
-navegador moderno; la mesa 3D carga Three.js desde un CDN.
+`index.html` y despliega los cambios de `main`. `render.yaml` configura las
+cabeceras de caché y el sitio instala un Service Worker para abrir el juego
+después de la primera visita con conexión. Three.js y el cliente de Supabase se
+sirven localmente; la sincronización de partidas con Supabase requiere conexión.
 
 La versión optimizada para celular en vertical está disponible en
 [`movil.html`](./movil.html) y en
@@ -31,3 +33,9 @@ RLS restringe cada operación a la sesión anónima propietaria de las partidas.
 Las partidas también se conservan en el almacenamiento local del navegador.
 La sesión anónima queda asociada a ese navegador; borrar sus datos de sitio
 puede impedir recuperar las partidas desde otro dispositivo.
+
+La versión PWA conserva los archivos del juego localmente. El primer acceso
+necesita conexión para descargar el juego; las partidas en la nube y otras
+funciones de Supabase siguen necesitando Internet.
+Al cambiar recursos, incrementa `CACHE_VERSION` en `sw.js` para renovar la
+caché del dispositivo.

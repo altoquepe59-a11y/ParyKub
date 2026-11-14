@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const THREE_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  const THREE_SCRIPT_URL = './three.min.js';
   let threeLoad;
 
   function loadThree() {
@@ -10,7 +10,7 @@
 
     threeLoad = new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = THREE_CDN;
+      script.src = THREE_SCRIPT_URL;
       script.async = true;
       script.onload = () => window.THREE
         ? resolve(window.THREE)

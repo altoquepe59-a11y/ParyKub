@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#102747">
+  <link rel="manifest" href="/manifest.json">
   <title>ParyKub (Vertical)</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preload" href="./three.min.js" as="script">
+  <link rel="preload" href="./supabase.min.js" as="script">
   <link rel="prefetch" href="Baloo2-ExtraBold.ttf">
   <link rel="preload" href="PartyKub-3d-table.js" as="script">
   <link rel="prefetch" href="PartyKub-fondo-mesa.png">
-  <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script" crossorigin>
   <style>
     @font-face {
       font-family: "Baloo 2";
@@ -1294,7 +1295,7 @@
     <h1 id="turn-announcement-text" class="turn-announcement__text"></h1>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+  <script src="./supabase.min.js"></script>
   <script src="PartyKub-3d-table.js"></script>
   <script>
     (() => {
@@ -3026,6 +3027,21 @@
         if (!document.hidden) scheduleBots();
       });
     })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => navigator.serviceWorker.ready)
+          .then(async () => {
+            if (navigator.storage && typeof navigator.storage.persist === 'function') {
+              const persisted = await navigator.storage.persist();
+              if (!persisted) console.info('El navegador no concedió almacenamiento persistente para PartyKub.');
+            }
+          })
+          .catch((error) => console.error('No se pudo registrar el modo sin conexión de PartyKub:', error));
+      });
+    }
   </script>
 </body>
 </html>
