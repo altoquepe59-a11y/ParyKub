@@ -1761,10 +1761,12 @@
           return mesh;
         };
         const character = {
-          1: { feminine: false, skin: 0xd9935a, hair: 0x1a1112, hoodie: 0x6b1829, hoodLight: 0x7f2236, hoodDark: 0x4a0f1d, pants: 0x2b2e3b },
-          2: { feminine: true, skin: 0xe9b88c, hair: 0x2a1a16, hoodie: 0xe0c15f, hoodLight: 0xf0d57a, hoodDark: 0xb6963a, pants: 0x3a3f55 },
-          3: { feminine: true, skin: 0xe9b88c, hair: 0x2a1a16, hoodie: 0x6a8fcf, hoodLight: 0x86a9e2, hoodDark: 0x486aa6, pants: 0x2b2e3b }
-        }[seat] || { feminine: false, skin: 0xd9935a, hair: 0x1a1112, hoodie: 0x6b1829, hoodLight: 0x7f2236, hoodDark: 0x4a0f1d, pants: 0x2b2e3b };
+          Mauro: { feminine: false, skin: 0xd9935a, hair: 0x1a1112, hoodie: 0x6b1829, hoodLight: 0x7f2236, hoodDark: 0x4a0f1d, pants: 0x2b2e3b },
+          Luisa: { feminine: true, skin: 0xe9b88c, hair: 0x2a1a16, hoodie: 0xe0c15f, hoodLight: 0xf0d57a, hoodDark: 0xb6963a, pants: 0x3a3f55 },
+          Sofí: { feminine: true, skin: 0xe9b88c, hair: 0x2a1a16, hoodie: 0x6a8fcf, hoodLight: 0x86a9e2, hoodDark: 0x486aa6, pants: 0x2b2e3b },
+          Sofi: { feminine: true, skin: 0xe9b88c, hair: 0x2a1a16, hoodie: 0x6a8fcf, hoodLight: 0x86a9e2, hoodDark: 0x486aa6, pants: 0x2b2e3b }
+        }[player.name.replace(/\s+\(bot\)$/i, '')]
+          || { feminine: false, skin: 0xd9935a, hair: 0x1a1112, hoodie: 0x6b1829, hoodLight: 0x7f2236, hoodDark: 0x4a0f1d, pants: 0x2b2e3b };
         const skin = toon(character.skin);
         const hair = toon(character.hair);
         const hoodie = toon(character.hoodie);
