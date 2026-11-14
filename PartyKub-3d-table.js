@@ -713,6 +713,9 @@
       let pinchStartRadius = radius;
       let disposed = false;
       let currentView = 'player';
+      let cameraAnimationFrame = 0;
+      let tileRevealFrame = 0;
+      let turnAnimationGeneration = 0;
       const clickableTiles = [];
       const rackHandTiles = [];
       let playerRackDropTarget = null;
@@ -875,7 +878,7 @@
         updateCamera();
       }
 
-      function view(name) {
+      function configureView(name) {
         currentView = name;
         const boardPanel = element.closest('.board-panel');
         if (boardPanel) boardPanel.dataset.boardView = name;
@@ -896,6 +899,11 @@
           theta = 0.34;
           phi = 1.17;
           viewScale = 0.48;
+        } else if (name === 'first-person') {
+          target.set(0, 0.7, 4.8);
+          theta = 0;
+          phi = 1.32;
+          viewScale = 0.44;
         } else {
           target.set(0, 0.5, 1.3);
           theta = 0;
@@ -905,12 +913,79 @@
         }
         if (name !== 'player') radius = fitRadius() * viewScale;
         rackHandTiles.forEach((tile) => { tile.visible = name !== 'top'; });
+      }
+
+      function view(name) {
+        if (cameraAnimationFrame) cancelAnimationFrame(cameraAnimationFrame);
+        cameraAnimationFrame = 0;
+        configureView(name);
         updateCamera();
+      }
+
+      function animateBoardTiles() {
+        if (tileRevealFrame) cancelAnimationFrame(tileRevealFrame);
+        const generation = ++turnAnimationGeneration;
+        const tiles = [...boardTileMeshes.values()];
+        if (!tiles.length) return;
+        tiles.forEach((tile) => tile.scale.setScalar(0.01));
+        const startedAt = performance.now();
+        const animate = (now) => {
+          if (disposed || generation !== turnAnimationGeneration) return;
+          let complete = true;
+          tiles.forEach((tile, index) => {
+            const progress = Math.max(0, Math.min(1, (now - startedAt - index * 34) / 360));
+            const eased = 1 - ((1 - progress) ** 3);
+            tile.scale.setScalar(0.01 + eased * 0.99);
+            if (progress < 1) complete = false;
+          });
+          updateCamera();
+          tileRevealFrame = complete ? 0 : requestAnimationFrame(animate);
+        };
+        tileRevealFrame = requestAnimationFrame(animate);
+      }
+
+      function animateTurnFocus() {
+        if (cameraAnimationFrame) cancelAnimationFrame(cameraAnimationFrame);
+        const start = {
+          target: target.clone(),
+          theta,
+          phi,
+          radius
+        };
+        configureView('player');
+        const end = {
+          target: target.clone(),
+          theta,
+          phi,
+          radius
+        };
+        target.copy(start.target);
+        theta = start.theta;
+        phi = start.phi;
+        radius = start.radius;
+        const startedAt = performance.now();
+        const animate = (now) => {
+          if (disposed) return;
+          const progress = Math.min(1, (now - startedAt) / 820);
+          const eased = 1 - ((1 - progress) ** 3);
+          target.lerpVectors(start.target, end.target, eased);
+          theta = start.theta + (end.theta - start.theta) * eased;
+          phi = start.phi + (end.phi - start.phi) * eased;
+          radius = start.radius + (end.radius - start.radius) * eased;
+          updateCamera();
+          if (progress < 1) cameraAnimationFrame = requestAnimationFrame(animate);
+          else cameraAnimationFrame = 0;
+        };
+        cameraAnimationFrame = requestAnimationFrame(animate);
+        animateBoardTiles();
       }
 
       function clearPieces() {
         if (botAnimationFrame) cancelAnimationFrame(botAnimationFrame);
         botAnimationFrame = 0;
+        if (tileRevealFrame) cancelAnimationFrame(tileRevealFrame);
+        tileRevealFrame = 0;
+        turnAnimationGeneration += 1;
         botActors.forEach((actor) => {
           actor.faceTexture.dispose();
           actor.moodIconTexture.dispose();
@@ -2876,9 +2951,13 @@
       return {
         update,
         animateBotTurn,
+        animateTurnFocus,
         pauseBotTurn,
+        view,
         dispose() {
           pauseBotTurn();
+          if (cameraAnimationFrame) cancelAnimationFrame(cameraAnimationFrame);
+          cameraAnimationFrame = 0;
           disposed = true;
           if (observer) observer.disconnect();
           else window.removeEventListener('resize', resize);
