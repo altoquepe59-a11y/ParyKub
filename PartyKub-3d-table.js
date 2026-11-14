@@ -771,15 +771,14 @@
         color: 0xf6c491,
         roughness: 0.62,
         bumpMap: cursorSkinBump,
-        bumpScale: 0.035
+        bumpScale: 0.012
       });
       const cursorSkinLight = new THREE.MeshStandardMaterial({
         color: 0xf8cda9,
         roughness: 0.56,
         bumpMap: cursorSkinBump,
-        bumpScale: 0.035
+        bumpScale: 0.012
       });
-      const cursorSkinShadow = new THREE.MeshStandardMaterial({ color: 0xc98458, roughness: 0.72 });
       const cursorNail = new THREE.MeshStandardMaterial({ color: 0xf6cfc4, roughness: 0.34 });
       const cursorDigits = [];
       const cursorIndexDigitIndex = 0;
@@ -801,7 +800,7 @@
         else palmHeight -= 0.12 * thenar * Math.max(0, -x) * (-y)
           + 0.06 * hypothenar * Math.max(0, x) * (-y);
         palmHeight *= 0.82 + 0.18 * towardKnuckles;
-        palmPositions.setXYZ(index, x * palmWidth * 0.4, palmHeight * 0.72, -0.06 + z * 0.62);
+        palmPositions.setXYZ(index, x * palmWidth * 0.48, palmHeight * 0.72, -0.06 + z * 0.62);
       }
       palmGeometry.computeVertexNormals();
       const palm = new THREE.Mesh(palmGeometry, cursorSkin);
@@ -812,32 +811,19 @@
         let parent = root;
         let tip = null;
         lengths.forEach((length, index) => {
-          const profile = [];
-          for (let sample = 0; sample <= 8; sample += 1) {
-            const progress = sample / 8;
-            const taper = 1 - 0.12 * progress + 0.05 * Math.sin(Math.PI * progress);
-            profile.push(new THREE.Vector2(width * (1 - index * 0.05) * taper, length * progress));
-          }
-          const geometry = new THREE.LatheGeometry(profile, 20);
-          geometry.rotateX(-Math.PI / 2);
-          const bone = new THREE.Mesh(geometry, index === 1 ? cursorSkin : cursorSkinLight);
-          bone.scale.y = 0.92;
+          const bone = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 14), index === 1 ? cursorSkin : cursorSkinLight);
+          bone.scale.set(width * (1 - index * 0.08), width * 0.9 * (1 - index * 0.08), length * 0.58);
+          bone.position.z = -length * 0.48;
           parent.add(bone);
 
           const hinge = new THREE.Group();
           hinge.position.z = -length;
           parent.add(hinge);
           const knuckle = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), cursorSkin);
-          knuckle.scale.set(width * 1.02, width * 0.94, width * 0.98);
+          knuckle.scale.set(width * 0.98, width * 0.84, width * 0.92);
           hinge.add(knuckle);
 
           if (index < lengths.length - 1) {
-            const crease = new THREE.Mesh(
-              new THREE.TorusGeometry(width * 0.7, 0.0045, 5, 12),
-              cursorSkinShadow
-            );
-            crease.scale.y = 0.72;
-            hinge.add(crease);
             joints.push(hinge);
             parent = hinge;
           } else {
@@ -877,30 +863,18 @@
       cursorFingerXs.forEach((x, index) => {
         const knuckle = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), cursorSkin);
         const width = [0.092, 0.096, 0.092, 0.082][index];
-        knuckle.scale.set(width * 1.08, width * 0.78, width * 0.84);
+        knuckle.scale.set(width * 0.98, width * 0.72, width * 0.8);
         knuckle.position.set(x, 0.14, -0.49);
         cursorHand.add(knuckle);
       });
 
-      cursorThumb.position.set(-0.54, -0.05, -0.05);
+      cursorThumb.position.set(-0.31, -0.05, -0.05);
       makeCursorDigit(cursorThumb, [0.28, 0.22, 0.16], 0.12);
       cursorHand.add(cursorThumb);
       const wrist = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 16), cursorSkin);
-      wrist.scale.set(0.28, 0.15, 0.43);
-      wrist.position.set(0, -0.005, 0.61);
+      wrist.scale.set(0.25, 0.13, 0.38);
+      wrist.position.set(0, -0.005, 0.55);
       cursorHand.add(wrist);
-      cursorDigits.forEach((digit, index) => {
-        const x = cursorFingerXs[index];
-        const tendon = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(x * 0.2, 0.21, 0.52),
-          new THREE.Vector3(x * 0.55, 0.23, 0),
-          new THREE.Vector3(x, 0.2, -0.45)
-        ]);
-        cursorHand.add(new THREE.Mesh(
-          new THREE.TubeGeometry(tendon, 10, 0.012, 5, false),
-          cursorSkinLight
-        ));
-      });
 
       const cursorHandMessage = document.createElement('div');
       cursorHandMessage.setAttribute('aria-hidden', 'true');
