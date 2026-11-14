@@ -1814,10 +1814,16 @@
         turnAnnouncementKey = key;
         turnAnnouncementUntil = Date.now() + 5000;
         announcement.dataset.seat = String(state.currentSeat);
-        const playerName = currentPlayer.name.replace(/\s+\(bot\)$/i, '');
-        announcement.dataset.player = playerName === 'Luisa'
+        const playerName = currentPlayer.name
+          .trim()
+          .replace(/\s+\(bot\)$/i, '')
+          .trim()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+        announcement.dataset.player = playerName === 'luisa'
           ? 'luisa'
-          : playerName === 'Sofí' || playerName === 'Sofi' ? 'sofi' : '';
+          : playerName === 'sofi' ? 'sofi' : '';
         const phraseElement = $('#turn-announcement-text');
         phraseElement.setAttribute('aria-label', phrase);
         phraseElement.replaceChildren(...Array.from(phrase, (character, index) => {
@@ -3280,12 +3286,18 @@
         const indicator = $('#turn-pill');
         const activeSeat = state.botAnimationSeat ?? state.currentSeat;
         const activePlayer = state.players[activeSeat];
-        const activePlayerName = activePlayer.name.replace(/\s+\(bot\)$/i, '');
-        indicator.dataset.player = activePlayerName === 'Mauro'
+        const activePlayerName = activePlayer.name
+          .trim()
+          .replace(/\s+\(bot\)$/i, '')
+          .trim()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+        indicator.dataset.player = activePlayerName === 'mauro'
           ? 'mauro'
-          : activePlayerName === 'Luisa'
+          : activePlayerName === 'luisa'
             ? 'luisa'
-            : activePlayerName === 'Sofí' || activePlayerName === 'Sofi' ? 'sofi' : '';
+            : activePlayerName === 'sofi' ? 'sofi' : '';
         $('#turn-pill-label').textContent = state.ended
           ? 'Fin de la partida'
           : activeSeat === 0 ? 'Tu turno' : `Turno de ${activePlayer.name}`;
