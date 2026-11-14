@@ -1458,6 +1458,7 @@
         'Dime algo bonito.', '¿Qué cualidad valoras en alguien que te interesa?',
         '¿Qué intereses en común ayudan a que dos personas conecten?'
       ];
+      const BOT_ANSWER_INDEX = { Mauro: 0, Sofí: 1, Luisa: 2 };
       const BOT_ANSWERS = [
         ['Soy Mauro, estudio sistemas y voy en quinto ciclo.', 'Soy Sofi, estudio arquitectura y voy en cuarto ciclo.', 'Soy Luisa, estudio diseño y voy en sexto ciclo.'],
         ['Tengo 21 años.', 'Tengo 20 años.', 'Tengo 22 años.'],
@@ -1882,7 +1883,7 @@
         if (key === turnAnnouncementKey) return;
 
         if (turnAnnouncementTimer) clearTimeout(turnAnnouncementTimer);
-        const phrase = ['¡Tu turno!', '¡El turno de Mauro!', '¡El turno de Sofí!', '¡Turno de Luisa!'][state.currentSeat];
+        const phrase = ['¡Tu turno!', '¡El turno de Mauro!', '¡El turno de Luisa!', '¡El turno de Sofí!'][state.currentSeat];
         const announcement = $('#turn-announcement');
         announcement.classList.toggle('turn-announcement--intro', isFirstTurnAnnouncement);
         isFirstTurnAnnouncement = false;
@@ -2379,8 +2380,8 @@
         state.players = [
           createPlayer(name, false),
           createPlayer('Mauro', true),
-          createPlayer('Sofí', true),
-          createPlayer('Luisa', true)
+          createPlayer('Luisa', true),
+          createPlayer('Sofí', true)
         ];
         state.turnSequence += 1;
         state.bag = makeTiles();
@@ -2453,7 +2454,9 @@
         const dialog = $('#bot-dialog');
         clearTimeout(botDialogTimer);
         botDialogTimer = null;
-        const answer = BOT_ANSWERS[QUESTIONS.indexOf(state.question)]?.[seat - 1];
+        const responderName = state.players[seat].name.replace(/\s+\(bot\)$/, '');
+        const answerIndex = BOT_ANSWER_INDEX[responderName] ?? seat - 1;
+        const answer = BOT_ANSWERS[QUESTIONS.indexOf(state.question)]?.[answerIndex];
         if (!answer) throw new Error(`Falta la respuesta del bot ${seat} para la tarjeta actual.`);
         const questionCardSlot = $('#bot-dialog-question');
         const questionCard = $('#question-card').cloneNode(true);

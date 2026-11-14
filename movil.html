@@ -1354,6 +1354,7 @@
         'Dime algo bonito.', '¿Qué cualidad valoras en alguien que te interesa?',
         '¿Qué intereses en común ayudan a que dos personas conecten?'
       ];
+      const BOT_ANSWER_INDEX = { Mauro: 0, Sofí: 1, Luisa: 2 };
       const BOT_ANSWERS = [
         ['Soy Mauro, estudio sistemas y voy en quinto ciclo.', 'Soy Sofi, estudio arquitectura y voy en cuarto ciclo.', 'Soy Luisa, estudio diseño y voy en sexto ciclo.'],
         ['Tengo 21 años.', 'Tengo 20 años.', 'Tengo 22 años.'],
@@ -1760,7 +1761,7 @@
 
       function createPlayer(name, isBot, playerId = null) {
         const botAnswerIndex = isBot
-          ? Math.max(0, ['Mauro', 'Sofí', 'Luisa'].findIndex((botName) => name.startsWith(botName)))
+          ? BOT_ANSWER_INDEX[name.replace(/\s+\(bot\)$/, '')] ?? 0
           : null;
         return { name, isBot, playerId, botAnswerIndex, hand: [], opened: false };
       }
@@ -2575,7 +2576,7 @@
         }));
         const addBots = $('input[name="room-bot-mode"]:checked').value === 'bots';
         while (addBots && roomPlayers.length < 4) {
-          roomPlayers.push({ name: ['Mauro', 'Sofí', 'Luisa'][roomPlayers.length - members.length], isBot: true, playerId: null });
+          roomPlayers.push({ name: ['Mauro', 'Luisa', 'Sofí'][roomPlayers.length - 1], isBot: true, playerId: null });
         }
         onlineRoom.playerSeats = new Map(roomPlayers.map((player, index) => [player.playerId, index]).filter(([playerId]) => playerId));
         onlineRoom.localSeat = onlineRoom.playerSeats.get(onlineRoom.playerId);
@@ -2895,8 +2896,8 @@
           : [
             createPlayer(name, false),
             createPlayer('Mauro', true),
-            createPlayer('Sofí', true),
-            createPlayer('Luisa', true)
+            createPlayer('Luisa', true),
+            createPlayer('Sofí', true)
           ];
         state.turnSequence += 1;
         state.bag = makeTiles();
@@ -2976,7 +2977,7 @@
         const responder = state.players[seat];
         const answerIndex = Number.isInteger(responder.botAnswerIndex)
           ? responder.botAnswerIndex
-          : Math.max(0, Math.min(2, seat - 1));
+          : (BOT_ANSWER_INDEX[responder.name.replace(/\s+\(bot\)$/, '')] ?? Math.max(0, Math.min(2, seat - 1)));
         const answer = BOT_ANSWERS[QUESTIONS.indexOf(state.question)]?.[answerIndex];
         if (!answer) throw new Error(`Falta la respuesta del bot ${seat} para la tarjeta actual.`);
         const questionCardSlot = $('#bot-dialog-question');
