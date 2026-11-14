@@ -1,7 +1,7 @@
 'use strict';
 
 const CACHE_PREFIX = 'partykub-mobile-pwa-';
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const CORE_ASSETS = [
   '/movil.html',
