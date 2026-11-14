@@ -1115,12 +1115,12 @@
 
       function fitBoardRadius() {
         const bounds = boardFocusBounds;
-        const halfWidth = bounds ? (bounds.maxX - bounds.minX) / 2 + 0.7 : 2;
-        const halfDepth = bounds ? (bounds.maxZ - bounds.minZ) / 2 + 0.7 : 1.5;
+        const halfWidth = bounds ? (bounds.maxX - bounds.minX) / 2 + 2 : 2;
+        const halfDepth = bounds ? (bounds.maxZ - bounds.minZ) / 2 + 2 : 1.5;
         const tangent = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
         const horizontal = halfWidth / (tangent * Math.max(camera.aspect, 0.4));
         const vertical = halfDepth / tangent;
-        return Math.max(4.5, horizontal, vertical) * 1.08;
+        return Math.max(4.5, horizontal, vertical) * 1.35;
       }
 
       function maxZoomRadius() {
