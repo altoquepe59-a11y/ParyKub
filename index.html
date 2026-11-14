@@ -981,6 +981,8 @@
     .turn-announcement[data-seat="1"] { --turn-fill: #ff6268; --turn-neon: #ff263f; }
     .turn-announcement[data-seat="2"] { --turn-fill: #64baff; --turn-neon: #2388ff; }
     .turn-announcement[data-seat="3"] { --turn-fill: #ffe15a; --turn-neon: #ffc400; }
+    .turn-announcement[data-player="luisa"] { --turn-fill: #ffe15a; --turn-neon: #ffc400; }
+    .turn-announcement[data-player="sofi"] { --turn-fill: #64baff; --turn-neon: #2388ff; }
     @media (prefers-reduced-motion: reduce) {
       .turn-announcement, .turn-announcement::before, .turn-announcement::after, .turn-announcement__text, .turn-announcement__letter { animation: none; }
     }
@@ -1894,13 +1896,18 @@
         if (key === turnAnnouncementKey) return;
 
         if (turnAnnouncementTimer) clearTimeout(turnAnnouncementTimer);
-        const phrase = ['¡Tu turno!', '¡El turno de Mauro!', '¡El turno de Luisa!', '¡El turno de Sofí!'][state.currentSeat];
+        const currentPlayer = state.players[state.currentSeat];
+        const phrase = state.currentSeat === 0 ? '¡Tu turno!' : `¡El turno de ${currentPlayer.name}!`;
         const announcement = $('#turn-announcement');
         announcement.classList.toggle('turn-announcement--intro', isFirstTurnAnnouncement);
         isFirstTurnAnnouncement = false;
         turnAnnouncementKey = key;
         turnAnnouncementUntil = Date.now() + 5000;
         announcement.dataset.seat = String(state.currentSeat);
+        const playerName = currentPlayer.name.replace(/\s+\(bot\)$/i, '');
+        announcement.dataset.player = playerName === 'Luisa'
+          ? 'luisa'
+          : playerName === 'Sofí' || playerName === 'Sofi' ? 'sofi' : '';
         const phraseElement = $('#turn-announcement-text');
         phraseElement.setAttribute('aria-label', phrase);
         phraseElement.replaceChildren(...Array.from(phrase, (character, index) => {
