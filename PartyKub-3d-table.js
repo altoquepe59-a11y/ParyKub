@@ -728,6 +728,7 @@
       let cancelActiveBotFlight = null;
       let pointerCanHandleTiles = false;
       let cursorHandMode = 'open';
+      let cursorHandPitch = -0.12;
       let cursorHandBaseY = 0.27;
       let cursorFingerAnchor = null;
       let heldHandTile = null;
@@ -757,10 +758,15 @@
         const y = signedPower(palmPositions.getY(index));
         const z = signedPower(palmPositions.getZ(index));
         const towardKnuckles = (1 - z) / 2;
-        const palmWidth = 0.58 + 0.27 * towardKnuckles + (x < 0 ? 0.08 : 0.04);
+        const thenar = Math.exp(-Math.pow((z - 0.25) / 0.5, 2));
+        const hypothenar = Math.exp(-Math.pow((z - 0.1) / 0.55, 2));
+        const palmWidth = 0.58 + 0.27 * towardKnuckles + (x < 0 ? 0.15 * thenar : 0.05 * hypothenar);
         let palmHeight = y * (y > 0 ? 0.27 : 0.29);
-        if (y > 0) palmHeight += 0.035 * (1 - x * x) * y;
-        palmPositions.setXYZ(index, x * palmWidth * 0.36, palmHeight * 0.115, 0.02 + z * 0.43);
+        if (y > 0) palmHeight += 0.05 * (1 - x * x) * y * (0.6 + 0.4 * towardKnuckles);
+        else palmHeight -= 0.12 * thenar * Math.max(0, -x) * (-y)
+          + 0.06 * hypothenar * Math.max(0, x) * (-y);
+        palmHeight *= 0.82 + 0.18 * towardKnuckles;
+        palmPositions.setXYZ(index, x * palmWidth * 0.48, palmHeight * 0.72, -0.06 + z * 0.62);
       }
       palmGeometry.computeVertexNormals();
       const palm = new THREE.Mesh(palmGeometry, cursorSkin);
@@ -772,7 +778,7 @@
         let tip = null;
         lengths.forEach((length, index) => {
           const bone = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 14), index === 1 ? cursorSkin : cursorSkinLight);
-          bone.scale.set(width * (1 - index * 0.08), 0.062 * (1 - index * 0.08), length * 0.58);
+          bone.scale.set(width * (1 - index * 0.08), width * 0.9 * (1 - index * 0.08), length * 0.58);
           bone.position.z = -length * 0.48;
           parent.add(bone);
 
@@ -780,7 +786,7 @@
           hinge.position.z = -length;
           parent.add(hinge);
           const knuckle = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), cursorSkin);
-          knuckle.scale.set(width * 0.98, 0.058, width * 0.92);
+          knuckle.scale.set(width * 0.98, width * 0.82, width * 0.92);
           hinge.add(knuckle);
 
           if (index < lengths.length - 1) {
@@ -796,11 +802,11 @@
             tip = new THREE.Group();
             hinge.add(tip);
             const fingertip = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), cursorSkinLight);
-            fingertip.scale.set(width * 0.92, 0.057, width * 1.05);
+            fingertip.scale.set(width * 0.92, width * 0.88, width * 1.05);
             tip.add(fingertip);
             const nail = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), cursorNail);
-            nail.scale.set(width * 0.58, 0.012, length * 0.2);
-            nail.position.set(0, 0.044, -length * 0.45);
+            nail.scale.set(width * 0.58, width * 0.16, length * 0.2);
+            nail.position.set(0, width * 0.72, -length * 0.45);
             parent.add(nail);
           }
         });
@@ -808,34 +814,34 @@
         root.userData.tip = tip;
       };
 
-      [-0.25, -0.09, 0.09, 0.25].forEach((x, index) => {
+      [-0.39, -0.13, 0.14, 0.39].forEach((x, index) => {
         const digit = new THREE.Group();
-        digit.position.set(x, 0.015, -0.34);
-        const lengths = [0.44, 0.56, 0.62, 0.52];
+        digit.position.set(x, -0.04, -0.46);
+        const lengths = [0.52, 0.58, 0.54, 0.42];
         const length = lengths[index];
-        const width = index === 2 ? 0.066 : 0.06;
+        const width = [0.092, 0.096, 0.092, 0.082][index];
         makeCursorDigit(digit, [length * 0.43, length * 0.33, length * 0.24], width);
         digit.userData.index = index;
         cursorDigits.push(digit);
         cursorHand.add(digit);
       });
 
-      cursorThumb.position.set(0.29, 0.005, 0.09);
-      makeCursorDigit(cursorThumb, [0.23, 0.19, 0.12], 0.085);
+      cursorThumb.position.set(-0.54, -0.05, -0.05);
+      makeCursorDigit(cursorThumb, [0.28, 0.22, 0.16], 0.12);
       cursorHand.add(cursorThumb);
       const wrist = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 16), cursorSkin);
-      wrist.scale.set(0.25, 0.095, 0.29);
-      wrist.position.set(0, -0.005, 0.38);
+      wrist.scale.set(0.3, 0.14, 0.34);
+      wrist.position.set(0, -0.005, 0.53);
       cursorHand.add(wrist);
       cursorDigits.forEach((digit, index) => {
-        const x = [-0.25, -0.09, 0.09, 0.25][index];
+        const x = [-0.39, -0.13, 0.14, 0.39][index];
         const tendon = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(x * 0.2, 0.09, 0.32),
-          new THREE.Vector3(x * 0.55, 0.105, 0.02),
-          new THREE.Vector3(x, 0.095, -0.28)
+          new THREE.Vector3(x * 0.2, 0.21, 0.46),
+          new THREE.Vector3(x * 0.55, 0.23, 0),
+          new THREE.Vector3(x, 0.2, -0.4)
         ]);
         cursorHand.add(new THREE.Mesh(
-          new THREE.TubeGeometry(tendon, 10, 0.006, 5, false),
+          new THREE.TubeGeometry(tendon, 10, 0.012, 5, false),
           cursorSkinLight
         ));
       });
@@ -883,7 +889,7 @@
       function updateCursorHandMessage() {
         if (!cursorHand.visible || !cursorHandMessageUntil) return;
         cursorHand.updateMatrixWorld(true);
-        const point = cursorHand.localToWorld(new THREE.Vector3(0, 0.48, -0.45)).project(camera);
+        const point = cursorHand.localToWorld(new THREE.Vector3(0, 0.62, -0.55)).project(camera);
         const rect = element.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
         const x = (point.x * 0.5 + 0.5) * rect.width;
@@ -955,10 +961,10 @@
         }
         cursorDigits.forEach((digit) => {
           const index = digit.userData.index;
-          const curled = gripping || (pointing && index !== 2);
+          const curled = gripping || (pointing && index !== 0);
           const flex = gripping ? 0.9 : curled ? 0.72 : 0.02;
           const spread = pointing
-            ? (index === 2 ? 0.04 : (index - 1.5) * 0.12)
+            ? (index === 0 ? -0.04 : (index - 1.5) * 0.12)
             : (index - 1.5) * 0.075;
           digit.rotation.z += (spread - digit.rotation.z) * 0.2;
           digit.userData.joints.forEach((joint, jointIndex) => {
@@ -997,7 +1003,9 @@
         const reactionBounce = reactionActive && (cursorHandReaction === 'joker' || cursorHandReaction === 'yellow')
           ? Math.abs(Math.sin(time * 12)) * 0.025 * reactionWeight
           : 0;
-        cursorHand.rotation.set(reactionPitch, theta + reactionYaw, reactionRoll, 'YXZ');
+        const targetPitch = gripping ? -0.5 : pointing ? -0.32 : -0.12;
+        cursorHandPitch += (targetPitch - cursorHandPitch) * 0.16;
+        cursorHand.rotation.set(cursorHandPitch + reactionPitch, theta + reactionYaw, reactionRoll, 'YXZ');
         const bob = (gripping ? 0 : Math.sin(time * 3) * 0.012) + reactionBounce;
         if (cursorFingerAnchor && !gripping) {
           positionCursorHandAtFinger(cursorFingerAnchor);
@@ -3014,7 +3022,7 @@
       function positionHeldTile() {
         if (!heldHandTile || !handDragging?.moved) return;
         cursorHand.updateMatrixWorld(true);
-        const indexTip = cursorDigits[2].userData.tip.getWorldPosition(new THREE.Vector3());
+        const indexTip = cursorDigits[0].userData.tip.getWorldPosition(new THREE.Vector3());
         const thumbTip = cursorThumb.userData.tip.getWorldPosition(new THREE.Vector3());
         heldHandTile.position.copy(indexTip).add(thumbTip).multiplyScalar(0.5);
         heldHandTile.position.y += 0.035;
@@ -3024,12 +3032,15 @@
       function updateCursorHandPosition(event, targetPoint = null, gripping = false) {
         const point = targetPoint || getPlanePoint(event, 0.12);
         if (!point || !pointerCanHandleTiles) return;
-        cursorHand.rotation.set(0, theta, 0, 'YXZ');
         if (gripping) {
           cursorFingerAnchor = null;
-          const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), theta);
-          const palmOffset = new THREE.Vector3(0, 0.18, 0.02).multiplyScalar(cursorHand.scale.x).applyQuaternion(yaw);
-          cursorHand.position.set(point.x - palmOffset.x, point.y + palmOffset.y, point.z - palmOffset.z + 0.28);
+          cursorHand.rotation.set(cursorHandPitch, theta, 0, 'YXZ');
+          cursorHand.position.set(0, 0, 0);
+          cursorHand.updateMatrixWorld(true);
+          const indexTip = cursorDigits[0].userData.tip.getWorldPosition(new THREE.Vector3());
+          const thumbTip = cursorThumb.userData.tip.getWorldPosition(new THREE.Vector3());
+          const pinchOffset = indexTip.add(thumbTip).multiplyScalar(0.5);
+          cursorHand.position.copy(point).sub(pinchOffset);
           cursorHandBaseY = cursorHand.position.y;
         } else if (targetPoint) {
           cursorFingerAnchor = point.clone();
@@ -3049,7 +3060,7 @@
 
       function positionCursorHandAtFinger(point) {
         cursorHand.updateMatrixWorld(true);
-        const tipOffset = cursorDigits[2].userData.tip
+        const tipOffset = cursorDigits[0].userData.tip
           .getWorldPosition(new THREE.Vector3())
           .sub(cursorHand.position);
         cursorHand.position.copy(point).sub(tipOffset);
