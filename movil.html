@@ -2245,6 +2245,7 @@
         if ($('#pause-menu').open) $('#pause-menu').close();
         disposeBoard3D();
         $('#game').hidden = true;
+        $('#setup').hidden = false;
         renderSavedGames();
         if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       }
@@ -2505,7 +2506,7 @@
           restart.type = 'button';
           restart.className = 'primary';
           restart.textContent = 'Jugar otra partida';
-          restart.addEventListener('click', leaveGame);
+          restart.addEventListener('click', () => startGame(state.layout));
           panel.append(title, description, restart);
           container.append(panel);
           return;
