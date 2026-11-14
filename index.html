@@ -4,10 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#102747">
-  <link rel="manifest" href="/manifest.json">
   <title>PartyKub · Rummikub local</title>
-  <link rel="preload" href="./three.min.js" as="script">
-  <link rel="preload" href="./supabase.min.js" as="script">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="prefetch" href="partykub-solo-intro.html?v=1">
   <link rel="prefetch" href="Baloo2-ExtraBold.ttf">
   <link rel="preload" href="PartyKub-3d-table.js" as="script">
@@ -21,6 +19,7 @@
   <link rel="prefetch" href="PartyKub-splash-star.png">
   <link rel="prefetch" href="PartyKub-splash-word-hd.png">
   <link rel="prefetch" href="partykub-new-logo.png">
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script" crossorigin>
   <style>
     .home-intro {
       position: fixed;
@@ -1436,7 +1435,7 @@
     <h1 id="turn-announcement-text" class="turn-announcement__text"></h1>
   </div>
 
-  <script src="./supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <script src="PartyKub-3d-table.js"></script>
   <script>
     (() => {
@@ -3140,15 +3139,20 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(() => navigator.serviceWorker.ready)
-          .then(async () => {
-            if (navigator.storage && typeof navigator.storage.persist === 'function') {
-              const persisted = await navigator.storage.persist();
-              if (!persisted) console.info('El navegador no concedió almacenamiento persistente para PartyKub.');
+        navigator.serviceWorker.getRegistrations()
+          .then(async (registrations) => {
+            const rootScope = new URL('/', window.location.origin).href;
+            const workerUrl = new URL('/sw.js', window.location.origin).href;
+            const rootRegistration = registrations.find((registration) =>
+              registration.scope === rootScope
+              && [registration.active, registration.waiting, registration.installing]
+                .some((worker) => worker && worker.scriptURL === workerUrl)
+            );
+            if (rootRegistration && !await rootRegistration.unregister()) {
+              throw new Error('No se pudo retirar el Service Worker de alcance general.');
             }
           })
-          .catch((error) => console.error('No se pudo registrar el modo sin conexión de PartyKub:', error));
+          .catch((error) => console.error('No se pudo limitar la PWA de PartyKub a la versión móvil:', error));
       });
     }
   </script>

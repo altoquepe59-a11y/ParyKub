@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#102747">
   <link rel="manifest" href="/manifest.json">
   <title>ParyKub (Vertical)</title>
-  <link rel="preload" href="./three.min.js" as="script">
+  <link rel="prefetch" href="./three.min.js">
   <link rel="preload" href="./supabase.min.js" as="script">
   <link rel="prefetch" href="Baloo2-ExtraBold.ttf">
   <link rel="preload" href="PartyKub-3d-table.js" as="script">
@@ -1296,6 +1296,7 @@
   </div>
 
   <script src="./supabase.min.js"></script>
+  <script>window.PartyKubThreeScriptUrl = './three.min.js';</script>
   <script src="PartyKub-3d-table.js"></script>
   <script>
     (() => {
@@ -3031,7 +3032,20 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.getRegistrations()
+          .then(async (registrations) => {
+            const rootScope = new URL('/', window.location.origin).href;
+            const workerUrl = new URL('/sw.js', window.location.origin).href;
+            const rootRegistration = registrations.find((registration) =>
+              registration.scope === rootScope
+              && [registration.active, registration.waiting, registration.installing]
+                .some((worker) => worker && worker.scriptURL === workerUrl)
+            );
+            if (rootRegistration && !await rootRegistration.unregister()) {
+              throw new Error('No se pudo retirar el Service Worker de alcance general.');
+            }
+            return navigator.serviceWorker.register('/sw.js', { scope: '/movil.html' });
+          })
           .then(() => navigator.serviceWorker.ready)
           .then(async () => {
             if (navigator.storage && typeof navigator.storage.persist === 'function') {

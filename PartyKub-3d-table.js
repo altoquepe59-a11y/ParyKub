@@ -1,7 +1,8 @@
 (() => {
   'use strict';
 
-  const THREE_SCRIPT_URL = './three.min.js';
+  const THREE_SCRIPT_URL = window.PartyKubThreeScriptUrl
+    || 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
   let threeLoad;
 
   function loadThree() {

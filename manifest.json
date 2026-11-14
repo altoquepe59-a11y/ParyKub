@@ -2,7 +2,7 @@
   "name": "PartyKub - Rummikub local",
   "short_name": "PartyKub",
   "start_url": "/movil.html",
-  "scope": "/",
+  "scope": "/movil.html",
   "display": "standalone",
   "background_color": "#102747",
   "theme_color": "#102747",

@@ -1,11 +1,9 @@
 'use strict';
 
-const CACHE_PREFIX = 'partykub-pwa-';
-const CACHE_VERSION = 'v2';
+const CACHE_PREFIX = 'partykub-mobile-pwa-';
+const CACHE_VERSION = 'v1';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const CORE_ASSETS = [
-  '/',
-  '/index.html',
   '/movil.html',
   '/manifest.json',
   '/pwa-icon-192.png',
@@ -67,12 +65,19 @@ self.addEventListener('fetch', (event) => {
     || request.headers.has('range')
   ) return;
 
-  const isStatic = request.mode === 'navigate'
-    || ['script', 'style', 'image', 'font', 'worker', 'manifest'].includes(request.destination)
-    || /\.(?:html?|css|js|mjs|json|webmanifest|png|jpe?g|webp|svg|ico|ttf|woff2?)$/i.test(url.pathname);
-  if (!isStatic) return;
-
   event.respondWith((async () => {
+    if (request.mode === 'navigate') {
+      if (url.pathname !== '/movil.html') return fetch(request);
+    } else {
+      const client = event.clientId ? await self.clients.get(event.clientId) : null;
+      if (!client || new URL(client.url).pathname !== '/movil.html') return fetch(request);
+    }
+
+    const isStatic = request.mode === 'navigate'
+      || ['script', 'style', 'image', 'font', 'worker', 'manifest'].includes(request.destination)
+      || /\.(?:html?|css|js|mjs|json|webmanifest|png|jpe?g|webp|svg|ico|ttf|woff2?)$/i.test(url.pathname);
+    if (!isStatic) return fetch(request);
+
     const cache = await caches.open(CACHE_NAME);
     const cached = await cache.match(request, { ignoreVary: true });
     if (cached) return cached;
@@ -83,7 +88,7 @@ self.addEventListener('fetch', (event) => {
       return response;
     } catch (error) {
       if (request.mode === 'navigate') {
-        const mobileApp = await cache.match('/movil.html');
+        const mobileApp = await cache.match('/movil.html', { ignoreVary: true });
         if (mobileApp) return mobileApp;
       }
       throw error;

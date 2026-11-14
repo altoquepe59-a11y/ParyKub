@@ -6,13 +6,7 @@ services:
     buildCommand: echo "No build required"
     staticPublishPath: .
     headers:
-      - path: /
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate
-      - path: /*.html
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate
-      - path: /**/*.html
+      - path: /movil.html
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
       - path: /sw.js
@@ -21,7 +15,10 @@ services:
       - path: /manifest.json
         name: Cache-Control
         value: no-cache
-      - path: /PartyKub-3d-table.js
+      - path: /pwa-icon-192.png
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /pwa-icon-512.png
         name: Cache-Control
         value: public, max-age=31536000, immutable
       - path: /three.min.js
@@ -30,69 +27,6 @@ services:
       - path: /supabase.min.js
         name: Cache-Control
         value: public, max-age=31536000, immutable
-      - path: /**/*.js
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.css
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.png
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.png
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.jpg
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.jpg
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.jpeg
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.jpeg
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.svg
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.svg
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.webp
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.webp
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.gif
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.gif
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.ico
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.ico
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.ttf
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.ttf
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.woff
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.woff
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*.woff2
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /**/*.woff2
+      - path: /PartyKub-vertical-play-button.png
         name: Cache-Control
         value: public, max-age=31536000, immutable

@@ -6,10 +6,11 @@ guardado local y en la nube de las partidas.
 ## Ejecutar
 
 El sitio estático se publica desde la raíz de este repositorio. Render sirve
-`index.html` y despliega los cambios de `main`. `render.yaml` configura las
-cabeceras de caché y el sitio instala un Service Worker para abrir el juego
-después de la primera visita con conexión. Three.js y el cliente de Supabase se
-sirven localmente; la sincronización de partidas con Supabase requiere conexión.
+`index.html` como la versión horizontal para tablet y despliega los cambios de
+`main`. La PWA y el Service Worker se limitan a `movil.html`, la versión vertical.
+`render.yaml` limita las cabeceras de caché a esa experiencia y sus recursos
+propios. En la versión vertical, Three.js y el cliente de Supabase se sirven
+localmente; la sincronización de partidas con Supabase requiere conexión.
 
 La versión optimizada para celular en vertical está disponible en
 [`movil.html`](./movil.html) y en
@@ -34,8 +35,9 @@ Las partidas también se conservan en el almacenamiento local del navegador.
 La sesión anónima queda asociada a ese navegador; borrar sus datos de sitio
 puede impedir recuperar las partidas desde otro dispositivo.
 
-La versión PWA conserva los archivos del juego localmente. El primer acceso
+La PWA vertical conserva los archivos del juego localmente. El primer acceso
 necesita conexión para descargar el juego; las partidas en la nube y otras
-funciones de Supabase siguen necesitando Internet.
+funciones de Supabase siguen necesitando Internet. La versión horizontal para
+tablet no registra este Service Worker.
 Al cambiar recursos, incrementa `CACHE_VERSION` en `sw.js` para renovar la
 caché del dispositivo.
